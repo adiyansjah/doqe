@@ -2,7 +2,7 @@
 
 | Path | Answers | Changes |
 |---|---|---|
-| [workflow.md](workflow.md) | How do we work: task loop, checks, done? | When the process changes |
+| [WORKFLOW.md](WORKFLOW.md) | How do we work: task loop, checks, done? | When the process changes |
 | [arch/](arch/) | How is it built right now? | Same commit as the design change |
 | [adrs/](adrs/) | Why this design and not another? | New ADR per decision, never edited after acceptance |
 | [road/](road/) | What are we building next? | Per milestone |
