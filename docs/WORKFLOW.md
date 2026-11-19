@@ -84,14 +84,14 @@ When a part has several valid implementations:
 
 ## Benchmarks
 - **Set the budget first:** what counts as better or worse, decided **before** measuring.
-- **Record:** workload, machine, OS, compiler or runtime, flags, commit, warmups, repetitions, variance,
+- **Record:** workload, machine, OS, toolchain and version, flags, commit, warmups, repetitions, variance,
   and baseline vs candidate. Include memory and allocations, not just time.
 - **Trust:** shared CI timing is noisy; don't gate on small differences.
   Emulated or cross-compiled builds prove correctness, not speed.
 
 ## Learning
 After a failure or surprise, improve the strongest layer that would have caught it:
-**API design → compiler/static check → test → ADR or note.**
+**API design → static check → test → ADR or note.**
 Only record what was reproduced. Prefer a regression test over a written lesson.
 
 ## Definition of done

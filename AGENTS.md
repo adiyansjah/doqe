@@ -2,7 +2,8 @@
 
 Entry point for any AI coding agent. `CLAUDE.md` is a symlink to this file; edit only this one.
 
-**doqe** is a portable vectorized SQL engine: single node first, distributed later.
+**doqe** is a query engine: single node first, distributed later.
+No language, tools or platforms are chosen yet; each choice is made by an ADR, starting with ADR-0001.
 
 ## Start every session
 1. Read `docs/work/README.md` and open the task marked **Next**. No task? Ask the owner; don't invent one.
@@ -26,7 +27,7 @@ Full method: `docs/WORKFLOW.md`. These rules hold for any project.
 - Deleting files, pushing, merging to `main`.
 - Changing public interfaces or on-disk/wire formats.
 - Anything that costs money.
-- Adding files outside `docs/`, `src/`, `tests/`, `bench/`, `scripts/`.
+- Adding new top-level folders or files.
 
 **Habits**
 - One thread per task or milestone; state lives in `docs/work/`, not chat. Before stopping, write
@@ -40,12 +41,12 @@ Full method: `docs/WORKFLOW.md`. These rules hold for any project.
 ## Tech (this project: language, code, tools)
 Toolchain, commands, checks and machines: `docs/DEVELOPMENT.md`.
 
-**Language and code**
-- C17 only; no compiler extensions in core code.
-- OS-specific headers and CPU intrinsics only in `src/platform/`.
-- Targets: macOS ARM64, Linux x86_64, Linux ARM64. Code must build and pass tests on all three.
+**Not decided yet.** Language, toolchain, target platforms, code layout and machines are open.
 
-**Tools and machines**
-- Build, test and check only with the commands in `docs/DEVELOPMENT.md`; if a command is missing, add it there.
-- Performance numbers only from machines `docs/DEVELOPMENT.md` trusts for performance.
-- File names are case-sensitive on Linux and CI: links must match the exact case.
+How tech gets decided
+1. Each choice starts as an ADR in `docs/adrs/`. ADR-0001 decides the programming language and core toolchain.
+2. Once the owner accepts it, record the setup in `docs/DEVELOPMENT.md`.
+3. Add only the resulting hard rules here (e.g. language restrictions, where platform code lives).
+
+Until then: write no code, and build, test and check only with commands listed in `docs/DEVELOPMENT.md`.
+File names in links must match the exact case.

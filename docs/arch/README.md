@@ -19,7 +19,7 @@ arch/
 ## Template: `<part>.md`
 ````markdown
 # Part name
-Status: planned · ADRs: none · Code: `src/<part>/`
+Status: planned · ADRs: none · Code: `<path>`
 
 ## Responsibility
 What this part does, and what it does not do.

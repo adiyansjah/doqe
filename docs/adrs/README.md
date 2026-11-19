@@ -17,7 +17,7 @@ adrs/
 
 ## Rules
 - No decision without References. If it is judgment only, say so.
-- Each result file begins with: date, machine, OS, compiler, build type, commit.
+- Each result file begins with: date, machine, OS, toolchain and version, build settings, commit.
 - `refs/` holds text and CSV only, under about 100 KB; commit summaries, not dumps.
 - Results are never edited after acceptance; re-run and add a new file.
 - Status: `proposed` · `accepted` · `rejected` · `superseded by NNNN`
