@@ -20,7 +20,7 @@ work/
 ## Template: `TNNNN-slug.md`
 ````markdown
 # TNNNN Title
-Status: ⬜ todo · Milestone: MNN · Feature: FNN.N · ADRs: none
+Status: ⬜ todo · Type: feature / bug / refactor / optimization · Risk: low / high · Milestone: MNN · Feature: FNN.N · ADRs: none
 
 ## Goal
 What this task changes, in one or two lines.
