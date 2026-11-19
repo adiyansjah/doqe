@@ -7,7 +7,7 @@ An accepted ADR is never edited; to change a decision, write a new ADR and mark 
 ```
 adrs/
 ├── README.md               # this file: rules, template, index
-└── NNNN-short-slug/        # e.g. 0001-c17-no-extensions
+└── NNNN-short-slug/        # e.g. 0001-example-decision
     ├── adr.md              # the decision (template below)
     └── refs/               # what the ADR refers to
         ├── sources.md      # links, each with the claim it supports and the date read
