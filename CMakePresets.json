@@ -11,10 +11,18 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
+    },
+    {
+      "name": "asan-ubsan",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/build/asan-ubsan",
+      "cacheVariables": { "DOQE_ENABLE_SANITIZERS": true }
     }
   ],
   "buildPresets": [
-    { "name": "debug", "configurePreset": "debug" }
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "quality", "configurePreset": "debug", "targets": ["format", "lint"] },
+    { "name": "asan-ubsan", "configurePreset": "asan-ubsan" }
   ],
   "testPresets": [
     {
@@ -22,6 +30,12 @@
       "configurePreset": "debug",
       "output": { "outputOnFailure": true },
       "execution": { "noTestsAction": "error" }
+    },
+    {
+      "name": "asan-ubsan",
+      "inherits": "debug",
+      "configurePreset": "asan-ubsan",
+      "environment": { "ASAN_OPTIONS": "detect_stack_use_after_return=1" }
     }
   ],
   "workflowPresets": [
@@ -31,6 +45,14 @@
         { "type": "configure", "name": "debug" },
         { "type": "build", "name": "debug" },
         { "type": "test", "name": "debug" }
+      ]
+    },
+    {
+      "name": "asan-ubsan",
+      "steps": [
+        { "type": "configure", "name": "asan-ubsan" },
+        { "type": "build", "name": "asan-ubsan" },
+        { "type": "test", "name": "asan-ubsan" }
       ]
     }
   ]

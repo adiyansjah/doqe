@@ -1,0 +1,152 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS 26 arm64
+            runner: macos-26
+            llvm_asset: macOS-ARM64
+            llvm_sha256: aba592b4a15e8f90c634c5367b51ec8418b8bcd2829865db331a17dc9418dcff
+          - name: Debian 13 x86_64
+            runner: ubuntu-latest
+            container: debian:13
+            llvm_asset: Linux-X64
+            llvm_sha256: f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a
+          - name: Debian 13 x86_64 · CMake 3.25 floor
+            runner: ubuntu-latest
+            container: debian:13
+            llvm_asset: Linux-X64
+            llvm_sha256: f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a
+            cmake_floor: true
+    defaults:
+      run:
+        shell: bash
+    env:
+      LLVM_VERSION: 23.1.5
+
+    steps:
+      - name: Provision Debian build tools
+        if: matrix.container
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            binutils ca-certificates cmake curl git libc6-dev libstdc++6 ninja-build \
+            xz-utils zlib1g zstd
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Trust the checkout in the Debian container
+        if: matrix.container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # ADR-0001 refs/sources.md records the upstream release archive digests.
+      - name: Set LLVM archive path
+        id: llvm
+        env:
+          LLVM_ASSET: ${{ matrix.llvm_asset }}
+        run: echo "archive=$RUNNER_TEMP/LLVM-$LLVM_VERSION-$LLVM_ASSET.tar.xz" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        id: cache-llvm
+        with:
+          path: ${{ steps.llvm.outputs.archive }}
+          key: llvm-${{ env.LLVM_VERSION }}-${{ matrix.llvm_asset }}-${{ matrix.llvm_sha256 }}
+
+      - name: Verify and extract pinned LLVM
+        env:
+          ARCHIVE: ${{ steps.llvm.outputs.archive }}
+          LLVM_SHA256: ${{ matrix.llvm_sha256 }}
+          CACHE_HIT: ${{ steps.cache-llvm.outputs.cache-hit }}
+        run: |
+          if [[ "$CACHE_HIT" != true ]]; then
+            curl --fail --show-error --silent --location --retry 3 \
+              --output "$ARCHIVE" \
+              "https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VERSION/${ARCHIVE##*/}"
+          fi
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            checksum=(shasum -a 256)
+          else
+            checksum=(sha256sum)
+          fi
+          printf '%s  %s\n' "$LLVM_SHA256" "$ARCHIVE" | "${checksum[@]}" -c -
+          pin="$HOME/opt/llvm-$LLVM_VERSION"
+          mkdir -p "$pin"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            tar -xJf "$ARCHIVE" --strip-components=1 -C "$pin"
+          else
+            target=x86_64-unknown-linux-gnu
+            tar -xJf "$ARCHIVE" --strip-components=1 -C "$pin" --wildcards \
+              '*/bin/clang' '*/bin/clang++' '*/bin/clang-23' \
+              '*/bin/clang-format' '*/bin/clang-tidy' '*/bin/llvm-nm' \
+              '*/include/c++/v1' "*/include/$target/c++/v1" \
+              '*/lib/clang/23' "*/lib/$target/libc++.a" \
+              "*/lib/$target/libc++abi.a" "*/lib/$target/libunwind.a"
+            du -sh "$pin"
+          fi
+
+      - name: Install CMake 3.25.3 in runner scratch space
+        if: matrix.cmake_floor
+        run: |
+          # From Kitware's v3.25.3 release SHA-256 manifest.
+          asset=cmake-3.25.3-linux-x86_64.tar.gz
+          digest=d4d2ba83301b215857d3b6590cd4434a414fa151c5807693abe587bd6c03581e
+          cd "$RUNNER_TEMP"
+          curl --fail --show-error --silent --location --retry 3 \
+            --output "$asset" "https://github.com/Kitware/CMake/releases/download/v3.25.3/$asset"
+          printf '%s  %s\n' "$digest" "$asset" | sha256sum -c -
+          tar -xzf "$asset"
+          echo "$RUNNER_TEMP/${asset%.tar.gz}/bin" >> "$GITHUB_PATH"
+
+      - name: Assert Debian Ninja floor
+        if: matrix.container
+        run: test "$(ninja --version)" = 1.12.1
+
+      - name: Assert CMake floor
+        if: matrix.cmake_floor
+        run: test "$(cmake --version | sed -n '1p')" = 'cmake version 3.25.3'
+
+      - name: Debug workflow
+        run: |
+          cmake --version
+          ninja --version
+          cmake --workflow --preset debug
+
+      - name: Format and lint
+        if: '!matrix.cmake_floor'
+        run: cmake --build --preset quality
+
+      - name: ASan and UBSan workflow
+        if: '!matrix.cmake_floor'
+        run: cmake --workflow --preset asan-ubsan
+
+      - name: Build and test with macOS SDK 26.0
+        if: runner.os == 'macOS'
+        env:
+          DEVELOPER_DIR: /Applications/Xcode_26.0.1.app/Contents/Developer
+        run: |
+          test "$(xcrun --sdk macosx26.0 --show-sdk-version)" = 26.0
+          sdk=$(xcrun --sdk macosx26.0 --show-sdk-path)
+          sdk="${sdk%/*}/MacOSX26.0.sdk"
+          test "$(xcrun --sdk "$sdk" --show-sdk-version)" = 26.0
+          cmake --preset debug -B build/sdk-26.0 -DCMAKE_OSX_SYSROOT="$sdk"
+          cmake --build build/sdk-26.0
+          grep -Fq -- "-isysroot $sdk " build/sdk-26.0/compile_commands.json
+          ctest --test-dir build/sdk-26.0 --output-on-failure

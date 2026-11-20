@@ -1,18 +1,26 @@
+#include "throw_for_unwind_test.hpp"
+
 #include <gtest/gtest.h>
 
 #include <stdexcept>
 
-void throw_for_unwind_test();
-
 TEST(Runtime, UnwindsAcrossFunctionBoundary) {
   int destroyed = 0;
-  struct Guard {
-    int &count;
-    ~Guard() { ++count; }
+  class Guard {
+  public:
+    explicit Guard(int &count) : count_(&count) {}
+    ~Guard() { ++*count_; }
+    Guard(const Guard &) = delete;
+    Guard &operator=(const Guard &) = delete;
+    Guard(Guard &&) = delete;
+    Guard &operator=(Guard &&) = delete;
+
+  private:
+    int *count_;
   };
 
   try {
-    Guard guard{destroyed};
+    const Guard guard{destroyed};
     throw_for_unwind_test();
     ADD_FAILURE() << "Expected an exception";
   } catch (const std::runtime_error &error) {

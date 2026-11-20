@@ -1,0 +1,82 @@
+Date: 2026-11-20T21:41:07Z (Mac), 2026-11-20T21:41:15Z (dev01)
+Machines: Skyfall.local (macOS 26.6.2 arm64, SDK 26.5), dev01 (Debian 13.7 x86_64, glibc 2.41)
+Toolchain: upstream LLVM Clang, clang-format and clang-tidy 23.1.5 on both hosts
+Build settings: Debug and ASan+UBSan presets, C++23, pinned static libc++/libc++abi
+Sanitizer tests: ASAN_OPTIONS=detect_stack_use_after_return=1
+Commit: f83ff18675c78c45865e156ff5bf8107570505e9 (t0003-quality-checks-ci, dirty worktree)
+
+Scripted native checks
+
+  bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+
+The script exited 0 on both hosts, built in disposable copies, and took the machine
+lock itself on dev01. A fresh transfer replaced dev01's stale ~/doqe-work. An SSH
+test confirmed the transfer directory was removed after the run.
+
+Check                                                   Mac (CMake 4.4.0, Ninja 1.13.2)   dev01 (CMake 3.31.6, Ninja 1.12.1)
+cmake --workflow --preset debug                         PASS, 5/5                        PASS, 5/5
+cmake --build --preset quality                          format and lint PASS             format and lint PASS
+clang-format --dry-run -Werror (new test header)         PASS                             PASS
+cmake --workflow --preset asan-ubsan                    PASS, 5/5                        PASS, 5/5
+Sanitizer flags in compile_commands.json               8 TUs, 2 GoogleTest              8 TUs, 2 GoogleTest
+ctest --preset asan-ubsan -V -R '^Runtime.SharedDependencies$'
+                                                        PASS, 1/1                        PASS, 1/1
+Non-sanitized executables passed as ASan inputs          Linux-only seed                  exit 1, missing __asan_init
+Seed: format target                                    exit 1, clang-format diagnostic on both hosts
+Seed: new static-library target                         exit 1, misc-redundant-expression in lint_seed.cpp:1 on both hosts
+Seed: ASan heap use-after-free                          exit 8, AddressSanitizer: heap-use-after-free on both hosts
+Seed: ASan heap overflow                                exit 8, AddressSanitizer: heap-buffer-overflow on both hosts
+Seed: UBSan signed overflow                             exit 8, runtime error: signed integer overflow on both hosts
+Seed: new with free                                     Linux-only seed                  exit 8, alloc-dealloc-mismatch (operator new vs free)
+Seed: array new with scalar delete                      Linux-only seed                  exit 8, alloc-dealloc-mismatch (operator new [] vs operator delete)
+Seed: wrong-sized delete                                Linux-only seed                  exit 8, new-delete-type-mismatch
+
+Static check seeds ran via cmake --build --preset debug --target <format|lint>.
+Sanitizer seeds built in the disposable tree via cmake --build --preset asan-ubsan.
+Each seed then failed ctest --preset asan-ubsan -R '^Seed.Violation$' with its
+expected diagnostic. The sized-delete seed used -fsized-deallocation in its
+scratch configure.
+
+macOS: otool -L found the pinned ASan dylib in both sanitized executables and
+system libc++ and libc++abi in the dylib's dependencies. xcrun dyld_info -exports
+showed empty export tables for both executables. The UBSan seed reported signed
+overflow. ASan on macOS sees malloc/free beneath the static C++ allocation
+operators, so the allocation-family mismatch seeds run on Linux. The retained
+asan-prototype.txt records the earlier shared-libc++ trial, which loaded two
+libc++ images and aborted at GoogleTest registration.
+
+dev01: Runtime.SharedDependencies rejected shared C++ runtimes, the unwinder
+and sanitizer runtimes, and verified static __asan_init in both sanitized
+executables. Pinned llvm-nm verified UBSan overflow handlers in both. The
+retained asan-prototype.txt records the link map that identified compiler-rt's
+asan_cxx as the provider of operator new and operator delete.
+
+Debian container dry run on Skyfall
+
+/usr/local/bin/docker run --platform linux/amd64 ... debian:13 reported amd64.
+Ran the workflow's exact apt-get package set with --no-install-recommends in a
+disposable container. The workflow step verified the complete 2,014,093,084-byte
+LLVM archive against its SHA-256 and extracted a 632 MiB LLVM installation.
+The CMake 3.25.3 archive also passed its SHA-256 check. The Debian safe.directory
+and Ninja 1.12.1 assertion steps exited 0.
+
+With distribution CMake 3.31.6, cmake --workflow --preset debug passed 5/5,
+cmake --build --preset quality passed, and cmake --workflow --preset asan-ubsan
+passed 5/5. In a second source copy, the exact CMake 3.25.3 version assertion
+passed and cmake --workflow --preset debug passed 5/5 with Ninja 1.12.1.
+The dry run executed the workflow shell steps locally in the container.
+
+Manual workflow validation
+
+Ruby Psych parsed the YAML. A Ruby check verified the triggers, concurrency,
+timeout, matrix, action pins and ADR-0001 LLVM digests, and ran bash -n on all run
+blocks. Ran the extracted LLVM step with Bash's error and pipe-failure handling.
+A corrupt cached archive produced exit 1 and a simulated curl failure produced
+exit 22. git diff --check passed. actionlint was unavailable.
+
+The SDK assertion form was exercised locally by configuring Debug with the explicit
+MacOSX26.5.sdk sysroot and matching it in compile_commands.json. The hosted runner
+inventory lists SDK 26.0 with Xcode 26.0.1. The workflow selects that Xcode and
+checks the SDK 26.0 sysroot in the compile database before running CTest.
+Inventory: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+Hosted GitHub Actions and the macOS SDK 26.0 build are not verified.

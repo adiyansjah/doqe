@@ -46,9 +46,13 @@ and the Git revision and worktree status captured during the build. A source exp
 `unknown` for the revision. The build and test setup follows
 [ADR-0001](../adrs/0001-core-cpp-toolchain/adr.md).
 
-macOS executables export no symbols to prevent dyld from coalescing weak C++ runtime definitions at startup.
-Shared libraries and plugins will need an exported-symbols design via an ADR. F01.3 will need to
-export macOS sanitizer hooks such as `__asan_default_options`.
+macOS executables export no symbols to prevent dyld from coalescing weak C++ runtime definitions at
+startup. Debug and Release link the pinned static C++ runtime and run without ASan. The
+macOS ASan+UBSan preset uses the pinned compiler-rt ASan dylib with static libc++ and empty export
+tables. ASan on macOS sees `malloc` and `free` beneath the static C++ allocation operators.
+Allocation-family mismatch detection runs on Linux, where compiler-rt's `asan_cxx` supplies
+`operator new` and `operator delete`. Shared libraries and plugins will need an exported-symbols
+design via an ADR. [Development checks](../DEVELOPMENT.md#checks)
 
 ## Parts
 | File | Part | Status |

@@ -39,6 +39,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 include(cmake/pinned-runtime.cmake)
+include(cmake/sanitizers.cmake)
 
 find_package(Git QUIET)
 add_custom_target(doqe_build_version
@@ -77,6 +78,10 @@ if(BUILD_TESTING)
     "-DDOQE=$<TARGET_FILE:doqe>" -DARGUMENT=--unknown -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/check-cli.cmake")
   add_test(NAME Runtime.SharedDependencies COMMAND "${CMAKE_COMMAND}"
     "-DHOST_SYSTEM=${CMAKE_SYSTEM_NAME}"
+    "-DSANITIZED=${DOQE_ENABLE_SANITIZERS}"
+    "-DLLVM_NM=${DOQE_LLVM_ROOT}/bin/llvm-nm"
     "-DDOQE=$<TARGET_FILE:doqe>" "-DDOQE_TESTS=$<TARGET_FILE:doqe_tests>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/check-runtime-dependencies.cmake")
 endif()
+
+include(cmake/quality.cmake)

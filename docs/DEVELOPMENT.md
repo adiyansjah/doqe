@@ -63,6 +63,45 @@ cmake --build --preset debug
 ctest --preset debug
 ```
 
+After configuring Debug, run both quality checks or run either target by itself.
+
+```sh
+cmake --build --preset quality
+cmake --build --preset debug --target format
+cmake --build --preset debug --target lint
+```
+
+Format checks Git-tracked C and C++ sources, headers, and C++ header templates with the pin's
+clang-format. Lint runs the pin's clang-tidy on project-owned translation units selected from
+the Debug compilation database. It reports header diagnostics under the checkout's source
+path and treats warnings as errors. Build directories and fetched GoogleTest sources are
+excluded.
+
+Run AddressSanitizer and UndefinedBehaviorSanitizer together in their own build directory.
+
+```sh
+cmake --workflow --preset asan-ubsan
+```
+
+Debug and Release link the pinned static C++ runtime and run without ASan. The ASan+UBSan
+preset instruments project code and GoogleTest, keeps frame pointers, and makes sanitizer
+findings fatal. CTest runs with `ASAN_OPTIONS=detect_stack_use_after_return=1`.
+On Linux the preset links static compiler-rt and the pinned static C++ runtime,
+including libunwind. On macOS it links the pinned static C++ runtime and the pinned
+compiler-rt ASan dylib, which also supplies UBSan handlers. The Mac executables keep empty
+export tables. Seeded checks on both hosts cover C++ heap use-after-free, heap-buffer-overflow,
+and signed overflow. On macOS, ASan sees `malloc` and `free` beneath the static C++ allocation
+operators. The pinned shared libc++ trial loaded both the pinned and system C++ runtimes and
+aborted at GoogleTest registration. Allocation-family mismatch detection runs on Linux, where
+compiler-rt's `asan_cxx` supplies `operator new` and `operator delete`. The proof script checks
+`new` with `free`, array `new` with scalar `delete`, and a wrong-sized `delete` on Linux.
+[Prototype evidence](work/T0003-quality-checks-ci/refs/asan-prototype.txt)
+
+`Runtime.SharedDependencies` inspects direct Mach-O load commands on macOS and resolved
+dependencies on Linux. It rejects shared C++ runtimes and requires the macOS ASan dylib
+or Linux static `__asan_init` in both executables when sanitizers are enabled.
+The Mac compiler-rt dylib loads system libc++ and libc++abi for its own use.
+
 To use the same verified LLVM installation at another path, configure a fresh build directory
 and point `DOQE_LLVM_ROOT` at its absolute path.
 
@@ -77,6 +116,8 @@ On dev01, prefix build and workflow commands with `flock "$HOME/doqe-quiet.lock"
 
 ```sh
 flock "$HOME/doqe-quiet.lock" cmake --workflow --preset debug
+flock "$HOME/doqe-quiet.lock" cmake --build --preset quality
+flock "$HOME/doqe-quiet.lock" cmake --workflow --preset asan-ubsan
 ```
 
 From a checkout without a `build/debug` directory, the
@@ -89,6 +130,14 @@ bash docs/work/T0002-build-test-skeleton/refs/skeleton-checks.sh
 
 The script removes its temporary logs and fixtures on exit. Set `DOQE_KEEP_SKELETON_LOGS=1` to keep them.
 
+Run the [quality check proof script](work/T0003-quality-checks-ci/refs/quality-checks.sh) to
+repeat the positive and seeded-failure checks in a disposable copy. The script takes the
+machine lock on Linux. Invoke it directly on dev01.
+
+```sh
+bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+```
+
 `doqe --version` appends `-dirty` when Git reports worktree changes, including untracked files.
 
 ## Checks
@@ -96,11 +145,12 @@ The tool that covers each check kind in WORKFLOW.md.
 
 | Check kind | Tool | Where it runs |
 |---|---|---|
-| memory safety / undefined behavior | ASan + UBSan (planned, F01.3) | |
+| memory safety / undefined behavior | ASan + UBSan from the pin, `asan-ubsan` workflow | Mac, dev01, both CI platforms |
 | races and leaks | | |
 | fuzz / property tests | libFuzzer from the pin (planned) | |
-| static checks and formatting | clang-tidy, clang-format from the pin (planned, F01.3) | |
-| target platforms | macOS 26 arm64, Debian 13 x86_64 | GitHub Actions (planned, F01.3) |
+| static checks and formatting | clang-tidy and clang-format from the pin, `quality` build preset | Mac, dev01, both CI platforms |
+| target platforms | Debug workflow on macOS 26 arm64 and Debian 13 x86_64 | Mac, dev01, both CI platforms |
+| toolchain floors | Debug with CMake 3.25.3 and Ninja 1.12.1 on Debian 13, Debug with macOS SDK 26.0 | CI |
 
 ## Machines
 Each machine or CI runner and what it is trusted for (correctness, performance, or both).
@@ -109,6 +159,15 @@ Each machine or CI runner and what it is trusted for (correctness, performance, 
 |---|---|---|---|
 | Mac (owner) | macOS 26 arm64, Apple M4 | development, correctness | |
 | dev01 | Debian 13 x86_64, Intel i3-1220P, user space only | development, correctness | |
+| GitHub Actions `macos-26` | macOS 26 arm64, Xcode 26.0.1 for the SDK floor | build and correctness checks | performance |
+| GitHub Actions `ubuntu-latest` with `debian:13` | Debian 13 x86_64, distribution Ninja, separate CMake 3.25.3 job | build and correctness checks | performance |
+
+The [CI workflow](../.github/workflows/ci.yml) runs on pushes and pull requests. It caches the
+LLVM release archive by version, asset, and SHA-256. Every job verifies the entire archive,
+including cache hits. Debian extracts the compiler and check tools, libc++ headers, static C++
+runtime archives, and Clang resource directory to `$HOME/opt/llvm-23.1.5`. Both Debian jobs assert
+Ninja 1.12.1. The CMake floor job asserts 3.25.3, and the SDK floor step checks the sysroot in
+the compilation database for SDK 26.0. Hosted CI execution is not verified yet.
 
 ## Benchmarks
 Harness, which machine to run on, and where results are recorded.

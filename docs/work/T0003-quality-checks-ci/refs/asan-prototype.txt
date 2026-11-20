@@ -1,0 +1,65 @@
+Date: 2026-11-20 UTC / 2026-11-21 WIB
+Machines: Skyfall.local and dev01
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5; Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64
+Toolchain: pinned LLVM 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
+Build settings: asan-ubsan, -fsized-deallocation, ASAN_OPTIONS=alloc_dealloc_mismatch=1:detect_stack_use_after_return=1
+Commit: f83ff18675c78c45865e156ff5bf8107570505e9 (t0003-quality-checks-ci, git dirty: yes)
+
+Commands
+--------
+From a disposable copy of the task tree:
+  bash asan-prototype.sh 'f83ff18675c78c45865e156ff5bf8107570505e9 (t0003-quality-checks-ci, git dirty: yes)'
+On dev01 this command ran under flock "$HOME/doqe-quiet.lock". The script
+creates a second scratch directory and prints its path for inspection.
+
+Skyfall.local — pinned shared libc++ trial stopped at positive build
+------------------------------------------------------------------
+CMake 4.4.0, Ninja 1.13.2. The first launch hit an unconfigured python3
+shim. The run below used /usr/bin/python3 for the scratch-only patch.
+Pinned dylib SHA-256:
+  libc++.dylib     3add005c26e9d96e0a0287c9a794ed4622192e220321661f3b748eef75cdb066
+  libc++abi.dylib  cc08eb35350f5756ee9678e776a8c89474646618246ed8cc851388b3382021b7
+Configure exited 0. Linking produced both executables. The build failed
+when POST_BUILD GoogleTest discovery ran doqe_tests before main:
+  ERROR: AddressSanitizer: alloc-dealloc-mismatch (malloc vs operator delete)
+  allocation: ASan malloc <- pinned libc++abi operator new <- system libc++ string initialization
+  deallocation: ASan operator delete <- system libc++ string destruction <- GoogleTest registration
+The failing executable reached GoogleTest registration without a dyld loader
+abort on this attempt. The ASan abort blocked the full suite, the cross-TU
+exception test, and all six intentional seeds on macOS.
+
+Manual inspection of the failed build's binaries and a single rerun of the
+already linked test executable:
+  otool -L <build>/doqe <build>/doqe_tests <pin>/lib/clang/23/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
+  xcrun dyld_info -fixups <build>/doqe_tests <asan-dylib>
+  ASAN_OPTIONS=alloc_dealloc_mismatch=1:detect_stack_use_after_return=1 \
+    DYLD_PRINT_LIBRARIES=1 <build>/doqe_tests --gtest_filter=Runtime.UnwindsAcrossFunctionBoundary
+
+Both executables listed direct @rpath/libc++.1.dylib and
+@rpath/libc++abi.1.dylib dependencies and no direct /usr/lib/libc++ entry.
+The ASan dylib listed direct /usr/lib/libc++.1.dylib and
+/usr/lib/libc++abi.dylib dependencies. Test executable fixups placed
+runtime_error construction and __cxa_throw against its direct libc++ and
+libc++abi respectively. Operator new and new[] had weak-coalesced fixups.
+The ASan dylib's interpose entries targeted the system libc++ dependency.
+DYLD_PRINT_LIBRARIES confirmed the process loaded both pinned and system
+libc++ and libc++abi, plus both libunwind images. The rerun hit the same
+allocation mismatch before the cross-TU test executed.
+
+dev01 — pinned static libc++ control
+------------------------------------
+CMake 3.31.6, Ninja 1.12.1. Configure and build exited 0. CTest passed 5/5,
+including Runtime.UnwindsAcrossFunctionBoundary and Runtime.SharedDependencies.
+Each seeded build succeeded and each seeded CTest run exited 8:
+  use-after-free  AddressSanitizer: heap-use-after-free
+  heap-overflow   AddressSanitizer: heap-buffer-overflow
+  signed-overflow runtime error: signed integer overflow
+  new-free        AddressSanitizer: alloc-dealloc-mismatch (operator new vs free)
+  array-delete    AddressSanitizer: alloc-dealloc-mismatch (operator new [] vs operator delete)
+  sized-delete    AddressSanitizer: new-delete-type-mismatch
+
+llvm-nm reported weak _Znwm, _Znam, _ZdlPv, _ZdaPv and _ZdlPvm in
+libclang_rt.asan_cxx.a:asan_new_delete.cpp.o, libc++abi.a:stdlib_new_delete.cpp.o,
+and the test executable. The link map attributed the executable definitions to
+asan_new_delete.cpp.o. The executable's _Znwm/_Znam addresses from llvm-nm
+(0x1dd100/0x1dd210) matched the ASan object's entries in the map.
