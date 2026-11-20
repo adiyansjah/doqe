@@ -35,7 +35,8 @@ What this milestone delivers, in one or two lines.
 ````
 
 ## Milestones
-Current: none
+Current: none (M01 starts when its first task does)
 
 | #   | Milestone | Status | Exit criteria (short) |
 |-----|-----------|--------|-----------------------|
+| M01 | [Walking skeleton](M01-walking-skeleton.md) | ⬜ todo | builds, tests and checks pass on Mac + dev01 and in CI |
