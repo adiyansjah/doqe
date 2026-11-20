@@ -2,7 +2,7 @@
 
 Entry point for any AI coding agent. `CLAUDE.md` is a symlink to this file; edit only this one.
 
-**doqe** is a query engine: single node first, distributed later.
+**doqe** is an Iceberg-native data platform (SQL engine, catalog, data management): single node first, distributed later.
 The implementation language is C++. See the [root README](README.md) for the owner decision.
 
 ## Start every session
