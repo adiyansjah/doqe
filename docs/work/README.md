@@ -52,10 +52,10 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: T0003
+Next: none
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
 | [T0001](T0001-adr-0001-toolchain/task.md) | ADR-0001: core C++ toolchain | M01 | ✅ done |
 | [T0002](T0002-build-test-skeleton/task.md) | Build and test skeleton | M01 | ✅ done |
-| [T0003](T0003-quality-checks-ci/task.md) | Quality checks and CI | M01 | 🟨 doing |
+| [T0003](T0003-quality-checks-ci/task.md) | Quality checks and CI | M01 | ✅ done |
