@@ -2,7 +2,7 @@
 
 | Status | Date | Decided by | Confidence | Tags |
 |---|---|---|---|---|
-| proposed | 2026-11-20 | owner | medium | build, testing, portability |
+| accepted | 2026-11-20 | owner | medium | build, testing, portability |
 
 Supersedes: none · Superseded by: none · Related: none
 

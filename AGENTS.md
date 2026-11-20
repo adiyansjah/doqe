@@ -41,12 +41,18 @@ Full method: `docs/WORKFLOW.md`. These rules hold for any project.
 ## Tech (this project: language, code, tools)
 Toolchain, commands, checks and machines: `docs/DEVELOPMENT.md`.
 
-**Language: C++.** The owner decision is recorded in the [root README](README.md). The toolchain, target platforms, code layout and machines are open.
+**Language: C++23**, per the [root README](README.md) and [ADR-0001](docs/adrs/0001-core-cpp-toolchain/adr.md). Code layout is still open.
 
 How tech gets decided
-1. Remaining choices start as ADRs in `docs/adrs/`. ADR-0001 decides the C++ standard, build system, compilers, test framework and target platforms.
+1. Remaining choices start as ADRs in `docs/adrs/`.
 2. Once the owner accepts it, record the setup in `docs/DEVELOPMENT.md`.
 3. Add only the resulting hard rules here (e.g. language restrictions, where platform code lives).
 
-Until then: write no code, and build, test and check only with commands listed in `docs/DEVELOPMENT.md`.
+Hard rules (ADR-0001)
+- Build only with the pinned upstream LLVM Clang 23.1.5 and its libc++; never Apple Clang, GCC, Homebrew or distro Clang.
+- No C++ modules (no named modules, header units or `import std`).
+- From the C++23 library, use only `std::expected`, `std::unexpected`, `std::byteswap`, `std::unreachable`, `std::to_underlying`.
+- No `-march=native` in shipped builds. No package manager; third-party code only via an ADR.
+- Build, test and check only with commands listed in `docs/DEVELOPMENT.md`.
+
 File names in links must match the exact case.

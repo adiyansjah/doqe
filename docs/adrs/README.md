@@ -70,4 +70,4 @@ Newest first.
 
 | #    | Date | Title | Status |
 |------|------|-------|--------|
-| [0001](0001-core-cpp-toolchain/adr.md) | 2026-11-20 | Use C++23, LLVM Clang and CMake for the core toolchain | proposed |
+| [0001](0001-core-cpp-toolchain/adr.md) | 2026-11-20 | Use C++23, LLVM Clang and CMake for the core toolchain | accepted |
