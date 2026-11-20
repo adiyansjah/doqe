@@ -1,4 +1,4 @@
-Date (UTC): 2026-11-20T15:23:44Z (Skyfall), 2026-11-20T15:23:45Z (dev01)
+Date (UTC): 2026-11-20T15:53:41Z (Skyfall), 2026-11-20T16:11:38Z (dev01)
 Machines and OS: Skyfall.local, macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5
   dev01, Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41
 Toolchain: upstream Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
@@ -6,11 +6,11 @@ Toolchain: upstream Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
   dev01: CMake 3.31.6, Ninja 1.12.1
 Build settings: Debug, ISO C++23, pinned static libc++ and libc++abi,
   macOS system unwinder and Linux static LLVM libunwind
-Commit: 3aaa8f483d500e40b7dadbe95491b16dfe14218b, branch t0002-build-test-skeleton
-Git dirty: yes on both hosts
+Commit: 27d88dee8eee4e525e13061ca31286df6e531ded, branch t0002-build-test-skeleton
+Git dirty: no on both hosts (fresh clones of the commit)
 
 Command: bash docs/work/T0002-build-test-skeleton/refs/skeleton-checks.sh
-Exit: 0 on both hosts. Ran from fresh build directories in working-tree copies.
+Exit: 0 on both hosts. Ran from fresh clones of the commit with no build/ directory.
 The Linux run held ~/doqe-quiet.lock. The ~/doqe-work copy was removed after the run.
 Both script-created temporary directories were confirmed removed after exit.
 
@@ -30,7 +30,7 @@ Workflow, GoogleTest, and CLI
   empty CMAKE_C_FLAGS, CMAKE_CXX_FLAGS and CMAKE_CXX_STANDARD_LIBRARIES.
   Tests: Version.FormatsGitProvenance, Runtime.UnwindsAcrossFunctionBoundary,
   CLI.Version, CLI.UnknownArgument, Runtime.SharedDependencies.
-  CLI: doqe 0.1.0 (3aaa8f4-dirty)
+  CLI: doqe 0.1.0 (27d88de)
   GoogleTest HEAD: 52eb8108c5bdec04579160ae17225d66034bd723
   Both GoogleTest compile commands used the pinned driver, C++23, the forced
   libc++ version check, pinned headers and platform flags in both builds.

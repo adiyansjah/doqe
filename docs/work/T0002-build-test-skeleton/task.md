@@ -1,5 +1,5 @@
 # T0002 Build and test skeleton
-Status: 🟨 doing · Type: feature · Risk: high · Milestone: M01 · Feature: F01.2 · ADRs: [ADR-0001](../../adrs/0001-core-cpp-toolchain/adr.md)
+Status: ✅ done · Type: feature · Risk: high · Milestone: M01 · Feature: F01.2 · ADRs: [ADR-0001](../../adrs/0001-core-cpp-toolchain/adr.md)
 
 ## Goal
 Install the pinned LLVM 23.1.5 on the Mac and dev01, then add the CMake/Ninja skeleton that builds
@@ -37,6 +37,7 @@ None.
 - 2026-11-20 the updated script passed on the Mac and dev01. The dev01 build ran under `~/doqe-quiet.lock` and the verification checkout was removed. The results reflect the uncommitted working tree. A clean rerun is due after commit. CMake 3.25 and SDK 26.0 remain unverified.
 - 2026-11-20 (UTC) before the re-check fixes, Mac probes accepted linker launchers from cache and environment, a mixed compiler/runtime root, a substituted libc++ archive, and shared-library mode. A headerless TU built with the SDK injected through build-time CPATH, and the configure trace hashed the same compiler twice.
 - 2026-11-20 (UTC) the re-check fixes reject compiler and linker launchers, mixed roots, substituted runtime archives and shared-library builds. The libc++ header version is checked in every C++ TU. The compiler is hashed once when both drivers resolve to the same binary. The [skeleton checks](refs/skeleton-checks.txt) passed on Skyfall and dev01, including the symlinked root and forced header rejection. Both script temp directories and the locked dev01 working copy were removed. Skyfall also confirmed log retention with `DOQE_KEEP_SKELETON_LOGS=1` and no exports from either executable. The branch remains uncommitted.
+- 2026-11-20 clean-clone rerun of refs/skeleton-checks.sh at 27d88de: exit 0 on the Mac and dev01, 5/5 tests, `doqe 0.1.0 (27d88de)`, not dirty. Note: the script takes ~/doqe-quiet.lock itself; do not wrap it in another flock (it deadlocks).
 
 ## Result
-Commit: — · Proof: [commands](refs/skeleton-checks.sh) and [results](refs/skeleton-checks.txt) for both hosts.
+Commit: 27d88de · Proof: [commands](refs/skeleton-checks.sh) and [results](refs/skeleton-checks.txt) for both hosts.

@@ -52,9 +52,9 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: T0002
+Next: none (F01.3 task not created yet)
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
 | [T0001](T0001-adr-0001-toolchain/task.md) | ADR-0001: core C++ toolchain | M01 | ✅ done |
-| [T0002](T0002-build-test-skeleton/task.md) | Build and test skeleton | M01 | 🟨 doing |
+| [T0002](T0002-build-test-skeleton/task.md) | Build and test skeleton | M01 | ✅ done |
