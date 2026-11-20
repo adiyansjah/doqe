@@ -167,7 +167,7 @@ LLVM release archive by version, asset, and SHA-256. Every job verifies the enti
 including cache hits. Debian extracts the compiler and check tools, libc++ headers, static C++
 runtime archives, and Clang resource directory to `$HOME/opt/llvm-23.1.5`. Both Debian jobs assert
 Ninja 1.12.1. The CMake floor job asserts 3.25.3, and the SDK floor step checks the sysroot in
-the compilation database for SDK 26.0. Hosted CI execution is not verified yet.
+the compilation database for SDK 26.0. First hosted run: all jobs green (run 44823432158).
 
 ## Benchmarks
 Harness, which machine to run on, and where results are recorded.

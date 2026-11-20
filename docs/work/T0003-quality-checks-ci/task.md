@@ -22,7 +22,7 @@ and checks on every push, on macOS 26 arm64 and Debian 13 x86_64, all with the p
 - [x] Format and lint checks pass on the tree; seeded violations make them fail (both hosts)
 - [x] ASan+UBSan tests pass; seeded memory and UB bugs make them fail (both hosts)
 - [ ] CI runs build, tests, format, lint and sanitizers on every push and is green on `main`
-- [ ] The CMake 3.25 and macOS SDK 26.0 floors are checked in CI, or recorded as not verified with the reason
+- [x] The CMake 3.25 and macOS SDK 26.0 floors are checked in CI, or recorded as not verified with the reason
 - [x] Commands and checks recorded in `docs/DEVELOPMENT.md`
 
 ## Performance budget
@@ -56,6 +56,7 @@ None.
   each, and format and lint passed. Debug passed 5/5 with the verified CMake 3.25.3 and
   Ninja 1.12.1 floors. The local SDK 26.5 compile database matched the CI assertion form.
   Hosted GitHub Actions and the SDK 26.0 build remain not verified.
+- 2026-11-21 first GitHub Actions run 44823432158 on 1b24365 (branch push): all three jobs green: macOS 26 arm64 (Debug 5/5, ASan+UBSan 5/5, format, lint, SDK 26.0 build 5/5), Debian 13 x86_64 (Debug 5/5, ASan+UBSan 5/5, format, lint), CMake 3.25.3 floor (Debug 5/5). Green on `main` pending merge.
 
 ## Result
 Commit: — · Proof: [check script](refs/quality-checks.sh) and [host results](refs/quality-checks.txt)

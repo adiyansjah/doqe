@@ -79,4 +79,4 @@ MacOSX26.5.sdk sysroot and matching it in compile_commands.json. The hosted runn
 inventory lists SDK 26.0 with Xcode 26.0.1. The workflow selects that Xcode and
 checks the SDK 26.0 sysroot in the compile database before running CTest.
 Inventory: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
-Hosted GitHub Actions and the macOS SDK 26.0 build are not verified.
+Hosted GitHub Actions: run 44823432158 (https://github.com/adiyansjah/doqe/actions/runs/44823432158) on commit 1b24365, 2026-11-20T21:47Z–21:52Z UTC, all jobs success. macOS 26 arm64: Debug 5/5, ASan+UBSan 5/5, format, lint, and the build with Xcode 26.0.1 / MacOSX26.0.sdk 5/5. Debian 13 x86_64 container: Debug 5/5, ASan+UBSan 5/5, format, lint. CMake floor job: asserted `cmake version 3.25.3`, Debug 5/5.
