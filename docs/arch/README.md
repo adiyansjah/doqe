@@ -41,7 +41,14 @@ Not decided yet; becomes an ADR when it matters.
 ````
 
 ## Overview
-Not written yet. Fill in: layers diagram, data flow from input to output, rules across all parts, glossary.
+The walking skeleton exposes `doqe --version`. The executable uses the CMake project version
+and the Git revision and worktree status captured during the build. A source export reports
+`unknown` for the revision. The build and test setup follows
+[ADR-0001](../adrs/0001-core-cpp-toolchain/adr.md).
+
+macOS executables export no symbols to prevent dyld from coalescing weak C++ runtime definitions at startup.
+Shared libraries and plugins will need an exported-symbols design via an ADR. F01.3 will need to
+export macOS sanitizer hooks such as `__asan_default_options`.
 
 ## Parts
 | File | Part | Status |

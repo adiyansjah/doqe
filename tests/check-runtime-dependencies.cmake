@@ -1,0 +1,18 @@
+set(forbidden "libc\\+\\+(abi)?|libstdc\\+\\+|libgcc_s")
+if(HOST_SYSTEM STREQUAL "Darwin")
+  set(inspect otool -L)
+elseif(HOST_SYSTEM STREQUAL "Linux")
+  set(inspect ldd)
+  string(APPEND forbidden "|libunwind")
+else()
+  message(FATAL_ERROR "Unsupported platform for runtime dependency check: ${HOST_SYSTEM}")
+endif()
+
+foreach(binary IN ITEMS "${DOQE}" "${DOQE_TESTS}")
+  execute_process(COMMAND ${inspect} "${binary}"
+    OUTPUT_VARIABLE dependencies COMMAND_ERROR_IS_FATAL ANY)
+  message(STATUS "Runtime dependencies for ${binary}\n${dependencies}")
+  if(dependencies MATCHES "[/\t ](${forbidden})\\." OR dependencies MATCHES "not found")
+    message(FATAL_ERROR "Unexpected runtime dependency for ${binary}")
+  endif()
+endforeach()

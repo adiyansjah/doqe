@@ -1,0 +1,80 @@
+Date (UTC): 2026-11-20T15:23:44Z (Skyfall), 2026-11-20T15:23:45Z (dev01)
+Machines and OS: Skyfall.local, macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5
+  dev01, Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41
+Toolchain: upstream Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
+  Skyfall: CMake 4.4.0, Ninja 1.13.2
+  dev01: CMake 3.31.6, Ninja 1.12.1
+Build settings: Debug, ISO C++23, pinned static libc++ and libc++abi,
+  macOS system unwinder and Linux static LLVM libunwind
+Commit: 3aaa8f483d500e40b7dadbe95491b16dfe14218b, branch t0002-build-test-skeleton
+Git dirty: yes on both hosts
+
+Command: bash docs/work/T0002-build-test-skeleton/refs/skeleton-checks.sh
+Exit: 0 on both hosts. Ran from fresh build directories in working-tree copies.
+The Linux run held ~/doqe-quiet.lock. The ~/doqe-work copy was removed after the run.
+Both script-created temporary directories were confirmed removed after exit.
+
+SHA-256
+  Skyfall
+    bin/clang-23  a22ab66d53cf70dfee8544eabdeb36f075bf942861cb8d59f98a3fadc7a65c26
+    libc++.a      bbab7514c4ead42c32e18ff18c1006c9d8696f968fa895a34b6d0a545d5e9726
+    libc++abi.a   8c7604eda506797adfd63d6556e75990100e017baedb8460fa45b876e68fff1c
+  dev01
+    bin/clang-23  2033aa32d783adec2a3d30a5d9229b60d9a7594ad73e19e87c3fd2b5ed21a9c2
+    libc++.a      91ad2e76b5c991ea3700f4a9909f0ad7ec1b5a87ba05db6afbe69f186e818724
+    libc++abi.a   3ab150f0530e938d706b5d63b26711df9d299dad3f5e77231cf616e1a7f0d47e
+    libunwind.a   ed6b04b2ebd75062dc297ccd1e0047fe80c0dcb286d0b1bb85f7cc446f6e4252
+
+Workflow, GoogleTest, and CLI
+  Both hosts passed 5/5 CTest tests in the Debug workflow and in the build with
+  empty CMAKE_C_FLAGS, CMAKE_CXX_FLAGS and CMAKE_CXX_STANDARD_LIBRARIES.
+  Tests: Version.FormatsGitProvenance, Runtime.UnwindsAcrossFunctionBoundary,
+  CLI.Version, CLI.UnknownArgument, Runtime.SharedDependencies.
+  CLI: doqe 0.1.0 (3aaa8f4-dirty)
+  GoogleTest HEAD: 52eb8108c5bdec04579160ae17225d66034bd723
+  Both GoogleTest compile commands used the pinned driver, C++23, the forced
+  libc++ version check, pinned headers and platform flags in both builds.
+
+Negative checks
+  Every expected configure rejection exited 1. Skyfall rejected Apple Clang.
+  dev01 rejected GCC and Clang 19. Both rejected foreign CC/CXX selections,
+  incorrect driver names and a toolchain with an empty DOQE_LLVM_ROOT.
+  Both rejected CPATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, OBJC_INCLUDE_PATH
+  and LIBRARY_PATH during configure. They also rejected both C and C++
+  compiler and linker launcher variables from the cache and environment.
+  Both rejected a compiler wrapper with the exact upstream banner by SHA-256
+  and a mixed root with symlinked bin/include by the resolved-root check.
+  Both independently rejected substituted libc++.a and libc++abi.a archive
+  symlinks by SHA-256. dev01 also rejected a substituted libunwind.a symlink.
+  Both rejected BUILD_SHARED_LIBS=ON with the exported-symbols ADR diagnostic.
+  A headerless C++ probe was rebuilt with CPATH set only for the build.
+  Skyfall rejected SDK libc++ 210106 and dev01 rejected a fixture reporting
+  190000. Both failed the assertion requiring version 230105 (build exit 1).
+  The seeded SkeletonCheck.SeededFailure exited 8 on both hosts with
+  "intentional skeleton check".
+
+Runtime inspection of doqe and doqe_tests
+  Skyfall: otool -L listed only /usr/lib/libSystem.B.dylib in both builds.
+  Pinned llvm-nm -m showed undefined __Unwind_RaiseException from libSystem
+  in both default-build executables. SDK stubs identify the libSystem
+  re-export /usr/lib/system/libunwind.dylib and its unwind symbol. dyld_info
+  found no weak coalescing for the checked C++ runtime symbols.
+  dev01: ldd listed linux-vdso.so.1, libm.so.6, libc.so.6 and
+  ld-linux-x86-64.so.2 in both builds. Pinned llvm-nm --defined-only showed
+  _Unwind_RaiseException defined in both default-build executables.
+
+Source export
+  Both hosts configured and built with the LLVM installation accessed through
+  a symlink containing a space. The configure trace showed one SHA-256 call
+  for the resolved C and C++ compiler binary. The exported CLI printed
+  "doqe 0.1.0 (unknown)" and the C++23 library allowlist smoke passed.
+
+Additional Skyfall checks
+  xcrun dyld_info -exports showed no exports for either executable.
+  All eight C++ entries in the default compile database had the forced include.
+  A separate configure with distinct resolved C and C++ driver paths traced
+  one SHA-256 call per path.
+  An induced CPATH configure failure exited 1 and removed its temporary
+  directory by default. DOQE_KEEP_SKELETON_LOGS=1 kept the workflow log.
+
+Not verified: a clean committed checkout, CMake 3.25, and SDK 26.0.

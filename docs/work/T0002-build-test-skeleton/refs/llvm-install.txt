@@ -1,0 +1,91 @@
+Date: 2026-11-20 (WIB)
+Machines: Skyfall.local (macOS 26.6.2 build 25G83 arm64), dev01 (Debian 13.7 x86_64)
+Toolchain: upstream LLVM 23.1.5, LLVM revision 392dfff97d29b59d77e5cac6d4b6ef2585fe7117
+Build settings: ISO C++23, pinned libc++ headers, explicit static C++ archives
+Commit: 3aaa8f483d500e40b7dadbe95491b16dfe14218b (t0002-build-test-skeleton, git dirty: yes)
+Git provenance refers to the Mac checkout used to run llvm-install.sh. dev01 ran the script over SSH.
+
+Skyfall.local — macOS arm64
+--------------------------
+Archive: LLVM-23.1.5-macOS-ARM64.tar.xz
+shasum -a 256 -c SHA256SUMS: OK
+  aba592b4a15e8f90c634c5367b51ec8418b8bcd2829865db331a17dc9418dcff
+Detached OpenPGP signature: signature not verified. No local gpg, gpgv, or sq
+  was available. The .sig is OpenPGP and requires an OpenPGP verifier.
+Install prefix: /Users/adiyansjah/opt/llvm-23.1.5 (7.7G from du -sh)
+  No com.apple.quarantine attributes found. The archive and scratch directory
+  under ~/Downloads were removed.
+Version commands under <pin>/bin:
+  clang++ --version: clang version 23.1.5, target arm64-apple-darwin25.6.0, posix
+  clang-tidy --version: LLVM version 23.1.5, optimized build
+  clang-format --version: clang-format version 23.1.5
+Static archives present:
+  <pin>/lib/libc++.a
+  <pin>/lib/libc++abi.a
+  <pin>/lib/libunwind.a (present, unused by the smoke test)
+Headers present: <pin>/include/c++/v1 (expected and bit checked)
+Compiler-rt inventory under <pin>/lib/clang/23/lib/darwin:
+  libFuzzer: libclang_rt.fuzzer_osx.a, libclang_rt.fuzzer_no_main_osx.a,
+    libclang_rt.fuzzer_interceptors_osx.a
+  ASan: libclang_rt.asan_abi_osx.a, libclang_rt.asan_osx_dynamic.dylib
+  UBSan: libclang_rt.ubsan_minimal_osx.a, libclang_rt.ubsan_minimal_osx_dynamic.dylib,
+    libclang_rt.ubsan_osx_dynamic.dylib
+Smoke test: PASS (std::expected, std::byteswap, and throw/catch)
+  xcrun --show-sdk-path: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+  SDK version: 26.5. Deployment target: 26.0. Linked libc++.a and libc++abi.a.
+  otool -L ./smoke listed only:
+    /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)
+  xcrun nm -m ./smoke:
+    (undefined) external __Unwind_RaiseException (from libSystem)
+  The link map showed the symbol stub and GOT entry. The SDK's libSystem.tbd
+  re-exports /usr/lib/system/libunwind.dylib, whose stub exports the same
+  symbol. The system libunwind supplies the unwinder through libSystem.
+Run status: The initial installer returned 1 after reporting installation
+  and archive removal. The cause was not established. The install prefix and
+  scratch cleanup were checked independently. The subsequent Mac check
+  exited 0, including the compile, execution, linkage, and unwinder checks.
+
+dev01 — Debian 13.7 x86_64 (Linux 6.12.117+deb13-cloud-amd64, glibc 2.41)
+-----------------------------------------------------------------------
+Archive: LLVM-23.1.5-Linux-X64.tar.xz, downloaded on dev01
+sha256sum -c SHA256SUMS: OK (also passed on retry with the same archive)
+  f72edb0b36580ece7f52e23858f00c18fad4e87395ea7ad05d7e55c39f8fc78a
+Detached OpenPGP signature: PASS via sq using LLVM release-keys.asc.
+  Authenticated signer: FFB3368980F3E6BB5737145A316C56D064CACBA5 (Douglas Yung).
+  The first sq invocation exited 2 because --home none disables the
+  certificate store required by --signer. The retry imported the LLVM
+  keys into a temporary certificate store and verified the same archive.
+Install prefix: /home/dev/opt/llvm-23.1.5 (12G from du -sh)
+  Scratch directories and both hard links to the downloaded archive were removed.
+Version commands under <pin>/bin:
+  clang++ --version: clang version 23.1.5, target x86_64-unknown-linux-gnu, posix
+  clang-tidy --version: LLVM version 23.1.5, optimized build
+  clang-format --version: clang-format version 23.1.5
+Static archives present:
+  <pin>/lib/x86_64-unknown-linux-gnu/libc++.a
+  <pin>/lib/x86_64-unknown-linux-gnu/libc++abi.a
+  <pin>/lib/x86_64-unknown-linux-gnu/libunwind.a
+Headers present:
+  <pin>/include/c++/v1 (expected and bit checked)
+  <pin>/include/x86_64-unknown-linux-gnu/c++/v1
+Compiler-rt inventory under <pin>/lib/clang/23/lib/x86_64-unknown-linux-gnu:
+  libFuzzer: libclang_rt.fuzzer.a, libclang_rt.fuzzer_no_main.a,
+    libclang_rt.fuzzer_interceptors.a
+  ASan: libclang_rt.asan.a, libclang_rt.asan.so, libclang_rt.asan-preinit.a,
+    libclang_rt.asan_cxx.a, libclang_rt.asan_static.a
+  UBSan: libclang_rt.ubsan_standalone.a, libclang_rt.ubsan_standalone.so,
+    libclang_rt.ubsan_standalone_cxx.a, libclang_rt.ubsan_minimal.a,
+    libclang_rt.ubsan_minimal.so, libclang_rt.ubsan_loop_detect.a
+  ASan and UBSan archives also ship accompanying .syms files.
+Smoke test: PASS (std::expected, std::byteswap, and throw/catch)
+  Used both pinned include directories and all three static archives.
+  ldd ./smoke listed:
+    linux-vdso.so.1
+    libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6
+    libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6
+    /lib64/ld-linux-x86-64.so.2
+  The install retry and Linux check both exited 0.
+
+Both binaries had no dynamic dependencies on libc++, libc++abi, libgcc_s,
+or libunwind in otool -L / ldd. The Darwin system unwinder is a libSystem
+re-export. Sanitizer and libFuzzer checks established file presence.

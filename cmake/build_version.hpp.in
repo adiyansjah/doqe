@@ -1,0 +1,9 @@
+#pragma once
+
+namespace doqe {
+
+inline constexpr char build_version[] = "@DOQE_VERSION@";
+inline constexpr char build_commit[] = "@DOQE_COMMIT@";
+inline constexpr bool build_dirty = @DOQE_DIRTY@;
+
+}  // namespace doqe

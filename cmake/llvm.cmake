@@ -1,0 +1,28 @@
+set(DOQE_LLVM_ROOT "$ENV{HOME}/opt/llvm-23.1.5" CACHE PATH "Pinned LLVM installation")
+list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES DOQE_LLVM_ROOT)
+
+if(NOT DEFINED CMAKE_C_COMPILER AND "$ENV{CC}" STREQUAL "")
+  set(CMAKE_C_COMPILER "${DOQE_LLVM_ROOT}/bin/clang")
+endif()
+if(NOT DEFINED CMAKE_CXX_COMPILER AND "$ENV{CXX}" STREQUAL "")
+  set(CMAKE_CXX_COMPILER "${DOQE_LLVM_ROOT}/bin/clang++")
+endif()
+
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  if(NOT IS_ABSOLUTE "${CMAKE_OSX_SYSROOT}")
+    if(NOT CMAKE_OSX_SYSROOT)
+      set(CMAKE_OSX_SYSROOT macosx)
+    endif()
+    execute_process(COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-path
+      OUTPUT_VARIABLE CMAKE_OSX_SYSROOT OUTPUT_STRIP_TRAILING_WHITESPACE
+      COMMAND_ERROR_IS_FATAL ANY)
+  endif()
+  execute_process(COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-version
+    OUTPUT_VARIABLE sdk_version OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY)
+  if(sdk_version VERSION_LESS 26.0)
+    message(FATAL_ERROR "doqe requires macOS SDK 26.0 or newer")
+  endif()
+  set(CMAKE_OSX_SYSROOT "${CMAKE_OSX_SYSROOT}" CACHE PATH "macOS SDK sysroot" FORCE)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "26.0" CACHE STRING "macOS deployment target" FORCE)
+endif()
