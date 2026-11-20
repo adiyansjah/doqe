@@ -3,7 +3,7 @@
 Entry point for any AI coding agent. `CLAUDE.md` is a symlink to this file; edit only this one.
 
 **doqe** is a query engine: single node first, distributed later.
-No language, tools or platforms are chosen yet; each choice is made by an ADR, starting with ADR-0001.
+The implementation language is C++. See the [root README](README.md) for the owner decision.
 
 ## Start every session
 1. Read `docs/work/README.md` and open the task marked **Next**. No task? Ask the owner; don't invent one.
@@ -41,10 +41,10 @@ Full method: `docs/WORKFLOW.md`. These rules hold for any project.
 ## Tech (this project: language, code, tools)
 Toolchain, commands, checks and machines: `docs/DEVELOPMENT.md`.
 
-**Not decided yet.** Language, toolchain, target platforms, code layout and machines are open.
+**Language: C++.** The owner decision is recorded in the [root README](README.md). The toolchain, target platforms, code layout and machines are open.
 
 How tech gets decided
-1. Each choice starts as an ADR in `docs/adrs/`. ADR-0001 decides the programming language and core toolchain.
+1. Remaining choices start as ADRs in `docs/adrs/`. ADR-0001 decides the C++ standard, build system, compilers, test framework and target platforms.
 2. Once the owner accepts it, record the setup in `docs/DEVELOPMENT.md`.
 3. Add only the resulting hard rules here (e.g. language restrictions, where platform code lives).
 
