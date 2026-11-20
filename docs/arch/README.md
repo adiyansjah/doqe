@@ -54,6 +54,25 @@ Allocation-family mismatch detection runs on Linux, where compiler-rt's `asan_cx
 `operator new` and `operator delete`. Shared libraries and plugins will need an exported-symbols
 design via an ADR. [Development checks](../DEVELOPMENT.md#checks)
 
+M02 proposes coarse static libraries linked only to declared lower-layer dependencies.
+The engine composes SQL, catalog, execution, and maintenance for the server and embedding façade.
+The module map and allowed edges are in [ADR-0002](../adrs/0002-architecture-modules/adr.md#layers-and-direct-dependencies-criteria-1-and-4).
+Distributed execution is deferred beyond M02.
+
 ## Parts
 | File | Part | Status |
 |------|------|--------|
+| [base.md](base.md) | Foundation | planned |
+| [column.md](column.md) | Column types and buffers | planned |
+| [io.md](io.md) | Byte and object I/O | planned |
+| [format.md](format.md) | File codecs | planned |
+| [table.md](table.md) | Iceberg table semantics | planned |
+| [catalog.md](catalog.md) | Iceberg catalog | planned |
+| [exec.md](exec.md) | Physical execution | planned |
+| [sql.md](sql.md) | SQL parsing and planning | planned |
+| [maintain.md](maintain.md) | Table maintenance | planned |
+| [engine.md](engine.md) | Engine composition and query lifecycle | planned |
+| [api.md](api.md) | Embeddable C++ API | planned |
+| [server.md](server.md) | Network server | planned |
+| [cli.md](cli.md) | Command-line interface | planned |
+| [dist.md](dist.md) | Distributed execution | planned |
