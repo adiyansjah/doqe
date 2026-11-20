@@ -52,11 +52,11 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: T0004
+Next: none (F02.2 task not created yet)
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
 | [T0001](T0001-adr-0001-toolchain/task.md) | ADR-0001: core C++ toolchain | M01 | ✅ done |
 | [T0002](T0002-build-test-skeleton/task.md) | Build and test skeleton | M01 | ✅ done |
 | [T0003](T0003-quality-checks-ci/task.md) | Quality checks and CI | M01 | ✅ done |
-| [T0004](T0004-adr-0002-architecture/task.md) | ADR-0002: architecture, modules and components | M02 | 🟨 doing |
+| [T0004](T0004-adr-0002-architecture/task.md) | ADR-0002: architecture, modules and components | M02 | ✅ done |

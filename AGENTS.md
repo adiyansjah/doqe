@@ -41,7 +41,7 @@ Full method: `docs/WORKFLOW.md`. These rules hold for any project.
 ## Tech (this project: language, code, tools)
 Toolchain, commands, checks and machines: `docs/DEVELOPMENT.md`.
 
-**Language: C++23**, per the [root README](README.md) and [ADR-0001](docs/adrs/0001-core-cpp-toolchain/adr.md). Code layout is still open.
+**Language: C++23**, per the [root README](README.md) and [ADR-0001](docs/adrs/0001-core-cpp-toolchain/adr.md). Code layout follows [ADR-0002](docs/adrs/0002-architecture-modules/adr.md).
 
 How tech gets decided
 1. Remaining choices start as ADRs in `docs/adrs/`.
@@ -54,5 +54,13 @@ Hard rules (ADR-0001)
 - From the C++23 library, use only `std::expected`, `std::unexpected`, `std::byteswap`, `std::unreachable`, `std::to_underlying`.
 - No `-march=native` in shipped builds. No package manager; third-party code only via an ADR.
 - Build, test and check only with commands listed in `docs/DEVELOPMENT.md`.
+
+Hard rules (ADR-0002)
+- Code lives in the modules of [ADR-0002](docs/adrs/0002-architecture-modules/adr.md): one `doqe_<module>` static library and namespace `doqe::<module>` each, under `src/<module>/`.
+- A module may use only the modules ADR-0002 lists for it; every dependency points to a lower layer. A lower module that needs higher-layer behaviour declares an interface; the higher module implements it.
+- Cross-module includes use `"doqe/<module>/x.hpp"` (public headers only); private headers stay inside their module.
+- Fallible functions at a module boundary are `[[nodiscard]]` and return `std::expected<T, base::Status>`. Exceptions never cross a module boundary.
+- After `CommitStateUnknown` (or an unrecognised commit error), never clean up written files; reconcile first.
+- Production code never depends on tests, test support, benchmarks or tools.
 
 File names in links must match the exact case.

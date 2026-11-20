@@ -1,5 +1,5 @@
 # T0004 ADR-0002: architecture, modules and components
-Status: 🟨 doing · Type: feature · Risk: high · Milestone: M02 · Feature: F02.1 · ADRs: ADR-0002
+Status: ✅ done · Type: feature · Risk: high · Milestone: M02 · Feature: F02.1 · ADRs: ADR-0002
 
 ## Goal
 Draft ADR-0002 defining doqe's modules, layers, dependency rules, code layout and cross-module
@@ -17,10 +17,10 @@ conventions, plus a planned `docs/arch/<module>.md` per module; the owner accept
 - Test-only and benchmark code: where it lives and what it may depend on.
 
 ## Done when
-- [ ] ADR-0002 exists with options, references and a decision, listed in the ADR index
-- [ ] Each module has a `docs/arch/<module>.md` (Status: planned) listed in `docs/arch/README.md`
-- [ ] Two independent reviews done and findings resolved
-- [ ] The owner accepts ADR-0002; AGENTS.md gets the resulting hard rules
+- [x] ADR-0002 exists with options, references and a decision, listed in the ADR index
+- [x] Each module has a `docs/arch/<module>.md` (Status: planned) listed in `docs/arch/README.md`
+- [x] Two independent reviews done and findings resolved
+- [x] The owner accepts ADR-0002; AGENTS.md gets the resulting hard rules
 
 ## Performance budget
 None.
@@ -38,6 +38,7 @@ None.
   and dependency checks, module-map alternatives, and corrected sources. Recorded deferred governance and
   distribution and the required approval for new top-level folders. Owner acceptance and independent reviews remain pending.
 - 2026-11-21 applied the design review fixes for Arrow result ownership, server status mapping, Iceberg delete and commit semantics, and procedure contracts. ADR-0002 remains proposed.
+- 2026-11-21 owner accepted ADR-0002; hard rules added to AGENTS.md.
 
 ## Result
-Commit: — · Proof: —
+Commit: 0edcda7 and the acceptance commit · Proof: ADR-0002 accepted by the owner on 2026-11-21 after a draft, two independent high-effort reviews (Codex gpt-6.2-astra, Claude claude-opus-5-5), two revisions and a re-check.

@@ -2,7 +2,7 @@
 
 | Status | Date | Decided by | Confidence | Tags |
 |---|---|---|---|---|
-| proposed | 2026-11-21 | owner | medium | architecture, build, execution |
+| accepted | 2026-11-21 | owner | medium | architecture, build, execution |
 
 Supersedes: none · Superseded by: none · Related: [ADR-0001](../0001-core-cpp-toolchain/adr.md)
 
