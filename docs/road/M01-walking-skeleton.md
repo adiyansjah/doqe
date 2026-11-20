@@ -1,12 +1,12 @@
 # M01 Walking skeleton
-Status: ⬜ todo · ADRs: ADR-0001 (to write) · Arch: none
+Status: 🟨 doing · ADRs: ADR-0001 (proposed) · Arch: none
 
 ## Goal
 An empty doqe that builds, tests and checks itself the same way on every target machine,
 so every later task starts from a working pipeline. No data features.
 
 ## Features
-- F01.1 Toolchain decision: ADR-0001 (C++ standard, build system, packages, compilers, test framework, platforms) → task not yet created
+- F01.1 Toolchain decision: ADR-0001 (C++ standard, build system, packages, compilers, test framework, platforms) → [T0001](../work/T0001-adr-0001-toolchain/task.md)
 - F01.2 Build and test skeleton: a `doqe --version` binary and one unit test → task not yet created
 - F01.3 Quality checks: format, lint, sanitizers and CI on every push → task not yet created
 

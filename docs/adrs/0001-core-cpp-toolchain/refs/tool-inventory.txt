@@ -1,0 +1,116 @@
+Date: 2026-11-20T21:21:39+0700
+Machine: Mac (arm64)
+OS: macOS 26.6.2 (build 25G83)
+Toolchain versions: see below
+Build settings: version queries and C++23 libc++ header preprocessing only
+Commit: 16fbf5678c968dbcee58f9932f9a20909ed3f3d3 (Mac checkout, script run locally)
+Git dirty: yes (Mac checkout, git status --porcelain)
+CPU: Apple M4
+/usr/bin/gcc: Apple clang version 21.0.0 (clang-2100.1.1.101)
+/usr/bin/g++: Apple clang version 21.0.0 (clang-2100.1.1.101)
+/usr/bin/clang: Apple clang version 21.0.0 (clang-2100.1.1.101)
+/usr/bin/clang++: Apple clang version 21.0.0 (clang-2100.1.1.101)
+/opt/homebrew/bin/cmake: cmake version 4.4.0
+/opt/homebrew/bin/ninja: 1.13.2
+/usr/bin/git: git version 2.50.1 (Apple Git-155)
+Active developer directory: /Library/Developer/CommandLineTools
+macOS SDK: 26.5
+Command Line Tools receipt: 26.6.0.0.1781586589
+
+LLVM tools in /Library/Developer/CommandLineTools/usr/bin:
+/Library/Developer/CommandLineTools/usr/bin/clang: Apple clang version 21.0.0 (clang-2100.1.1.101)
+/Library/Developer/CommandLineTools/usr/bin/clang++: Apple clang version 21.0.0 (clang-2100.1.1.101)
+/Library/Developer/CommandLineTools/usr/bin/clang-tidy: absent
+/Library/Developer/CommandLineTools/usr/bin/clang-format: Apple clang-format version 21.0.0 (clang-2100.1.1.101)
+/Library/Developer/CommandLineTools/usr/bin/llvm-config: absent
+libc++ header and C++23 feature macros (Clang driver search paths):
+#define _LIBCPP_VERSION 210106
+#define __cpp_explicit_this_parameter 202110L
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_expected 202211L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L
+
+LLVM tools in /opt/homebrew/opt/llvm/bin:
+/opt/homebrew/opt/llvm/bin/clang: Homebrew clang version 22.1.8
+/opt/homebrew/opt/llvm/bin/clang++: Homebrew clang version 22.1.8
+/opt/homebrew/opt/llvm/bin/clang-tidy: Homebrew LLVM version 22.1.8
+/opt/homebrew/opt/llvm/bin/clang-format: Homebrew clang-format version 22.1.8
+/opt/homebrew/opt/llvm/bin/llvm-config: 22.1.8
+libc++ header and C++23 feature macros (Clang driver search paths):
+#define _LIBCPP_VERSION 220108
+#define __cpp_explicit_this_parameter 202110L
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_expected 202211L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L
+libc++ header and C++23 feature macros (macOS SDK headers, deployment target 26.0):
+#define _LIBCPP_VERSION 210106
+#define __cpp_explicit_this_parameter 202110L
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_expected 202211L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L
+
+LLVM tools in /opt/homebrew/opt/llvm@22/bin:
+/opt/homebrew/opt/llvm@22/bin/clang: Homebrew clang version 22.1.8
+/opt/homebrew/opt/llvm@22/bin/clang++: Homebrew clang version 22.1.8
+/opt/homebrew/opt/llvm@22/bin/clang-tidy: Homebrew LLVM version 22.1.8
+/opt/homebrew/opt/llvm@22/bin/clang-format: Homebrew clang-format version 22.1.8
+/opt/homebrew/opt/llvm@22/bin/llvm-config: 22.1.8
+libc++ header and C++23 feature macros (Clang driver search paths):
+#define _LIBCPP_VERSION 220108
+#define __cpp_explicit_this_parameter 202110L
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_expected 202211L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L
+libc++ header and C++23 feature macros (macOS SDK headers, deployment target 26.0):
+#define _LIBCPP_VERSION 210106
+#define __cpp_explicit_this_parameter 202110L
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_expected 202211L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L
+
+Date: 2026-11-20T21:21:40+0700
+Machine: dev01 (x86_64)
+OS: Debian GNU/Linux 13 (trixie), kernel 6.12.117+deb13-cloud-amd64
+Toolchain versions: see below
+Build settings: version queries and C++23 libc++ header preprocessing only
+Commit: 16fbf5678c968dbcee58f9932f9a20909ed3f3d3 (Mac checkout, script via ssh)
+Git dirty: yes (Mac checkout, git status --porcelain)
+CPU: 12th Gen Intel(R) Core(TM) i3-1220P
+/usr/bin/gcc: gcc (Debian 14.2.0-19) 14.2.0
+/usr/bin/g++: g++ (Debian 14.2.0-19) 14.2.0
+clang: absent from PATH
+clang++: absent from PATH
+/usr/bin/cmake: cmake version 3.31.6
+/usr/bin/ninja: 1.12.1
+/usr/bin/git: git version 2.47.3
+Native SDK (glibc development files and Linux UAPI headers):
+libc6-dev:amd64	2.41-12+deb13u4
+linux-libc-dev	6.12.117-1
+
+LLVM tools in /usr/lib/llvm-19/bin:
+/usr/lib/llvm-19/bin/clang: Debian clang version 19.1.7 (3+b1)
+/usr/lib/llvm-19/bin/clang++: Debian clang version 19.1.7 (3+b1)
+/usr/lib/llvm-19/bin/clang-tidy: absent
+/usr/lib/llvm-19/bin/clang-format: Debian clang-format version 19.1.7 (3+b1)
+/usr/lib/llvm-19/bin/llvm-config: 19.1.7
+libc++ header and C++23 feature macros (Clang driver search paths):
+  Header probe failed: <built-in>:1:10: fatal error: 'version' file not found
+/home/dev/.local/cmake-4.2.0-linux-x86_64/bin/cmake: cmake version 4.2.0
+
+LLVM tools in /home/dev/.local/llvm-19/bin:
+/home/dev/.local/llvm-19/bin/clang: clang version 19.1.7 (/home/runner/work/llvm-project/llvm-project/clang cd708029e0b2869e80abe31ddb175f7c35361f90)
+/home/dev/.local/llvm-19/bin/clang++: clang version 19.1.7 (/home/runner/work/llvm-project/llvm-project/clang cd708029e0b2869e80abe31ddb175f7c35361f90)
+/home/dev/.local/llvm-19/bin/clang-tidy:   LLVM version 19.1.7
+/home/dev/.local/llvm-19/bin/clang-format: clang-format version 19.1.7 (/home/runner/work/llvm-project/llvm-project/clang cd708029e0b2869e80abe31ddb175f7c35361f90)
+/home/dev/.local/llvm-19/bin/llvm-config: 19.1.7
+libc++ header and C++23 feature macros (Clang driver search paths):
+#define _LIBCPP_VERSION 190107
+#define __cpp_lib_byteswap 202110L
+#define __cpp_lib_expected 202211L
+#define __cpp_lib_to_underlying 202102L
+#define __cpp_lib_unreachable 202202L

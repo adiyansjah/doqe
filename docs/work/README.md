@@ -52,7 +52,8 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: none
+Next: T0001
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
+| [T0001](T0001-adr-0001-toolchain/task.md) | ADR-0001: core C++ toolchain | M01 | 🟨 doing |
