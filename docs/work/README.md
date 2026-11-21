@@ -52,7 +52,7 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: T0005
+Next: none
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
@@ -60,4 +60,4 @@ Next: T0005
 | [T0002](T0002-build-test-skeleton/task.md) | Build and test skeleton | M01 | ✅ done |
 | [T0003](T0003-quality-checks-ci/task.md) | Quality checks and CI | M01 | ✅ done |
 | [T0004](T0004-adr-0002-architecture/task.md) | ADR-0002: architecture, modules and components | M02 | ✅ done |
-| [T0005](T0005-module-skeleton/task.md) | Module skeleton and boundary checks | M02 | 🟨 doing |
+| [T0005](T0005-module-skeleton/task.md) | Module skeleton and boundary checks | M02 | ✅ done |

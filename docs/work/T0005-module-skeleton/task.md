@@ -1,5 +1,5 @@
 # T0005 Module skeleton and boundary checks
-Status: 🟨 doing · Type: feature · Risk: high · Milestone: M02 · Feature: F02.2 · ADRs: [ADR-0001](../../adrs/0001-core-cpp-toolchain/adr.md), [ADR-0002](../../adrs/0002-architecture-modules/adr.md)
+Status: ✅ done · Type: feature · Risk: high · Milestone: M02 · Feature: F02.2 · ADRs: [ADR-0001](../../adrs/0001-core-cpp-toolchain/adr.md), [ADR-0002](../../adrs/0002-architecture-modules/adr.md)
 
 ## Goal
 Create the 13 active ADR-0002 modules as empty `doqe_<module>` static libraries under `src/<module>/`,
@@ -22,7 +22,7 @@ linked only along allowed edges, and add build checks that reject forbidden link
 - [x] All 13 active modules build as `doqe_<module>` with exactly the ADR-0002 edges
 - [x] Seeded forbidden link and include cases each fail the check; the positive A → B → C fixture passes
 - [x] `doqe --version` and all existing tests and checks pass on the Mac and dev01
-- [ ] The boundary checks run in CI and CI is green on `main`
+- [x] The boundary checks run in CI and CI is green on `main`
 - [x] `docs/arch/` Status/Code lines and `docs/DEVELOPMENT.md` are updated
 
 ## Performance budget
@@ -50,6 +50,9 @@ None.
   public-interface rules. The checker accepts feature guards and diagnostic flags and
   reuses Clang search paths for identical invocations. The skeleton script compiles its
   C++23 library probe in the CLI target. See the proof for this revision.
+- 2026-11-21 reverted an edit to accepted ADR-0002 and made the edge parser read the original
+  text. Hosted CI green on the branch (run 44863625280) and on main at cd15af3 (run
+  44865094173): macOS 26 arm64, Debian 13, Debian 13 with the CMake 3.25 floor. Task done.
 
 ## Result
-Commit: — · Proof: [Mac and dev01 check results](refs/module-checks.txt)
+Commit: cd15af3 · CI: runs 44863625280 (branch) and 44865094173 (main), all three jobs green · Proof: [Mac and dev01 check results](refs/module-checks.txt)
