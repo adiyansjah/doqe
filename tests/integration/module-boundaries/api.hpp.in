@@ -1,0 +1,6 @@
+#ifndef DOQE_MODULE_FIXTURE_API_HPP
+#define DOQE_MODULE_FIXTURE_API_HPP
+
+#include "doqe/engine/boundary_fixture.hpp"
+
+#endif

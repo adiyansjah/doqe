@@ -1,5 +1,7 @@
 # Iceberg catalog
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/catalog/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/catalog/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ A definitely rejected publication makes no reference change from that attempt. A
 
 ## Planned
 
-Create the target in F02.2. Add the Iceberg REST catalog later.
+Add the Iceberg REST catalog later.
 
 ## Open questions
 

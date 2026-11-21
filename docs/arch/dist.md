@@ -1,5 +1,5 @@
 # Distributed execution
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/dist/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/dist/` (not yet created)
 
 ## Responsibility
 

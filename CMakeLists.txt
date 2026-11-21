@@ -40,21 +40,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 include(cmake/pinned-runtime.cmake)
 include(cmake/sanitizers.cmake)
+get_directory_property(doqe_toolchain_link_options LINK_OPTIONS)
 
 find_package(Git QUIET)
-add_custom_target(doqe_build_version
-  COMMAND "${CMAKE_COMMAND}"
-    "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
-    "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
-    "-DVERSION_HEADER=${CMAKE_CURRENT_BINARY_DIR}/build_version.hpp"
-    "-DDOQE_VERSION=${PROJECT_VERSION}"
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/build-version.cmake"
-  BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/build_version.hpp"
-  VERBATIM)
-
-add_executable(doqe src/main.cpp src/version.cpp)
-add_dependencies(doqe doqe_build_version)
-target_include_directories(doqe PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+include(cmake/modules.cmake)
+foreach(module IN LISTS doqe_modules)
+  add_subdirectory("src/${module}")
+endforeach()
+cmake_language(DEFER CALL doqe_check_module_links)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -66,22 +59,24 @@ if(BUILD_TESTING)
     GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
   FetchContent_MakeAvailable(googletest)
 
-  add_executable(doqe_tests tests/version_test.cpp tests/unwind_test.cpp
-    tests/throw_for_unwind_test.cpp src/version.cpp)
-  target_include_directories(doqe_tests PRIVATE src)
-  target_link_libraries(doqe_tests PRIVATE GTest::gtest_main)
+  add_executable(doqe_tests tests/cli/version_test.cpp tests/integration/unwind_test.cpp
+    tests/integration/throw_for_unwind_test.cpp)
+  set_source_files_properties(tests/cli/version_test.cpp PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/cli")
+  target_link_libraries(doqe_tests PRIVATE doqe_cli GTest::gtest_main)
   include(GoogleTest)
   gtest_discover_tests(doqe_tests)
   add_test(NAME CLI.Version COMMAND "${CMAKE_COMMAND}"
-    "-DDOQE=$<TARGET_FILE:doqe>" -DARGUMENT=--version -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/check-cli.cmake")
+    "-DDOQE=$<TARGET_FILE:doqe>" -DARGUMENT=--version -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-cli.cmake")
   add_test(NAME CLI.UnknownArgument COMMAND "${CMAKE_COMMAND}"
-    "-DDOQE=$<TARGET_FILE:doqe>" -DARGUMENT=--unknown -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/check-cli.cmake")
+    "-DDOQE=$<TARGET_FILE:doqe>" -DARGUMENT=--unknown -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-cli.cmake")
   add_test(NAME Runtime.SharedDependencies COMMAND "${CMAKE_COMMAND}"
     "-DHOST_SYSTEM=${CMAKE_SYSTEM_NAME}"
     "-DSANITIZED=${DOQE_ENABLE_SANITIZERS}"
     "-DLLVM_NM=${DOQE_LLVM_ROOT}/bin/llvm-nm"
     "-DDOQE=$<TARGET_FILE:doqe>" "-DDOQE_TESTS=$<TARGET_FILE:doqe_tests>"
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/check-runtime-dependencies.cmake")
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-runtime-dependencies.cmake")
 endif()
 
+include(cmake/module-boundaries.cmake)
 include(cmake/quality.cmake)

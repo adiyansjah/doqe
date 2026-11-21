@@ -61,14 +61,21 @@ expect_failure() {
 git clone --quiet --shared --no-checkout "$root" "$scratch/tree"
 cd "$scratch/tree"
 git -C "$root" ls-files --stage -z | git update-index -z --index-info
-git -C "$root" ls-files --cached --others --exclude-standard -z |
-  (cd "$root" && tar --null -T - -cf -) | tar -xf -
+(
+  cd "$root"
+  git ls-files --cached --others --exclude-standard -z |
+    while IFS= read -r -d '' file; do
+      if [[ -e $file || -L $file ]]; then
+        printf '%s\0' "$file"
+      fi
+    done | tar --null -T - -cf -
+) | tar -xf -
 
 run debug cmake --workflow --preset debug
 grep -F '100% tests passed' "$scratch/debug.log"
 run quality cmake --build --preset quality
 echo 'Format and lint passed'
-run new-header-format "$pin/bin/clang-format" --dry-run -Werror tests/throw_for_unwind_test.hpp
+run new-header-format "$pin/bin/clang-format" --dry-run -Werror tests/integration/throw_for_unwind_test.hpp
 run sanitizer cmake --workflow --preset asan-ubsan
 grep -F '100% tests passed' "$scratch/sanitizer.log"
 
@@ -122,12 +129,12 @@ if [[ $host == Linux ]]; then
   expect_failure missing-static-asan 'Missing statically linked __asan_init' \
     cmake -DHOST_SYSTEM=Linux -DSANITIZED=ON "-DLLVM_NM=$pin/bin/llvm-nm" \
     "-DDOQE=$PWD/build/debug/doqe" "-DDOQE_TESTS=$PWD/build/debug/doqe_tests" \
-    -P tests/check-runtime-dependencies.cmake
+    -P tests/integration/check-runtime-dependencies.cmake
 fi
 
-printf '\nint  format_seed( ){return  0;}\n' >> src/version.cpp
+printf '\nint  format_seed( ){return  0;}\n' >> src/cli/version.cpp
 expect_failure format-seed 'code should be clang-formatted' cmake --build --preset debug --target format
-cp "$root/src/version.cpp" src/version.cpp
+cp "$root/src/cli/version.cpp" src/cli/version.cpp
 printf 'static_assert(sizeof(int) == sizeof(int));\n' > src/lint_seed.cpp
 printf '\nadd_library(lint_seed STATIC src/lint_seed.cpp)\n' >> CMakeLists.txt
 run lint-seed-configure cmake --preset debug
@@ -173,8 +180,8 @@ for seed in "${seeds[@]}"; do
       run sized-delete-configure cmake --preset asan-ubsan -DCMAKE_CXX_FLAGS=-fsized-deallocation
       ;;
   esac
-  cp "$root/tests/version_test.cpp" tests/version_test.cpp
-  printf '\n#include <climits>\n#include <cstdlib>\n#include <new>\nTEST(Seed, Violation) { %s }\n' "$body" >> tests/version_test.cpp
+  cp "$root/tests/cli/version_test.cpp" tests/cli/version_test.cpp
+  printf '\n#include <climits>\n#include <cstdlib>\n#include <new>\nTEST(Seed, Violation) { %s }\n' "$body" >> tests/cli/version_test.cpp
   run "$seed-build" cmake --build --preset asan-ubsan
   expect_failure "$seed" "$diagnostic" ctest --preset asan-ubsan -R '^Seed.Violation$'
 done

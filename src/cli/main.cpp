@@ -8,8 +8,8 @@
 int main(int argc, char **argv) { // NOLINT(misc-const-correctness)
   // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   if (argc == 2 && std::string_view{argv[1]} == "--version") {
-    const auto version =
-        doqe::version_string(doqe::build_version, doqe::build_commit, doqe::build_dirty);
+    const auto version = doqe::cli::version_string(doqe::cli::build_version,
+                                                   doqe::cli::build_commit, doqe::cli::build_dirty);
     static_cast<void>(std::puts(version.c_str()));
     return 0;
   }

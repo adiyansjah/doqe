@@ -1,5 +1,7 @@
 # SQL parsing and planning
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/sql/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/sql/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ The runner receives resolved inputs and bound expressions. A CALL dispatches onl
 
 ## Planned
 
-Create the target in F02.2. Add the first statement-to-result path in a later slice. Share an authorization point with server and maintenance under the Governance and authorization ADR.
+Add the first statement-to-result path in a later slice. Share an authorization point with server and maintenance under the Governance and authorization ADR.
 
 ## Open questions
 

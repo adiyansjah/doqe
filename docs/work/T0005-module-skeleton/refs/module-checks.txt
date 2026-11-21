@@ -1,0 +1,155 @@
+T0005 module skeleton and boundary checks
+Date: 2026-11-21 UTC
+Machines: Skyfall.local and dev01 (ssh dev@dev01, user space)
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5
+    Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41
+Toolchain: ~/opt/llvm-23.1.5, Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
+    Mac CMake 4.4.0 and Ninja 1.13.2
+    dev01 CMake 3.31.6 and Ninja 1.12.1, plus a separate CMake 3.25.3 run
+Build settings: fresh Debug and ASan+UBSan presets, pinned static libc++ and libc++abi
+Commit: b4c4b1c5f04ecc7dd4f36f817bf08b86afa8a637 (t0005-module-skeleton, dirty)
+Tree SHA-256: 0ea5c08f8427543a1bfecf61a567d2eb7093c7abb1b36a2ad935c5a24c1d1024
+    The working checkout and both verification copies matched. The copies used a
+    branch-tip bundle, a binary Git patch against HEAD, and a tar of untracked files.
+    The digest excludes this proof because it contains the digest.
+
+Digest command (Bash, from the tree):
+  proof=docs/work/T0005-module-skeleton/refs/module-checks.txt
+  {
+    git -c core.quotePath=true diff --binary --no-ext-diff HEAD -- . ":(exclude)$proof"
+    printf '\0'
+    while IFS= read -r -d '' path; do
+      [[ $path != "$proof" ]] || continue
+      mode=file
+      if [[ -x $path ]]; then mode=executable; fi
+      printf '%s\0%s\0' "$path" "$mode"
+      git hash-object --no-filters -- "$path"
+    done < <(git ls-files --others --exclude-standard -z)
+  } | openssl dgst -sha256 | awk '{print $NF}'
+
+Commands on both hosts
+    Run in "$scratch/tree". The scratch directories are under Logs below.
+    On dev01 prefix the CMake configure and build commands and CTest with
+    flock "$HOME/doqe-quiet.lock". Run the fixture, skeleton, and quality scripts
+    directly. They take the lock themselves.
+
+  cmake -P cmake/check-module-edges.cmake
+  cmake --preset debug -B "$scratch/debug"
+  cmake --build "$scratch/debug" --parallel 4
+  ctest --test-dir "$scratch/debug" --output-on-failure
+  "$scratch/debug/doqe" --version
+  cmake --build "$scratch/debug" --target format
+  cmake --build "$scratch/debug" --target lint --parallel 4
+  cmake --preset asan-ubsan -B "$scratch/asan-ubsan"
+  cmake --build "$scratch/asan-ubsan" --parallel 4
+  env ASAN_OPTIONS=detect_stack_use_after_return=1 ctest --test-dir "$scratch/asan-ubsan" --output-on-failure
+  bash tests/integration/module-boundaries/run.sh
+  env DOQE_KEEP_SKELETON_LOGS=1 bash docs/work/T0002-build-test-skeleton/refs/skeleton-checks.sh
+  bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+
+    The listed checks passed on both hosts. Debug and ASan+UBSan each passed
+    7/7 tests and the version was doqe 0.1.0 (b4c4b1c-dirty). Format, lint,
+    the skeleton compiler and runtime gates, and the quality script's
+    positive and seeded-failure checks passed.
+
+    On the Mac, the skeleton script ran from "$scratch/skeleton-work/tree",
+    a separate copy with a matching digest. A duplicate invocation in
+    "$scratch/tree" refused to reuse the build/debug created by an earlier
+    successful skeleton run. The separate clean run exited 0.
+
+Fixture results
+    On both hosts, the runner exited 0 and all 54 negative fixtures
+    produced their expected diagnostics.
+    The additional configure or script rejections exited 1: unquoted ADR edge,
+    object library in place of server, exported private include root, unknown
+    executable, and production link to test support. The additional include
+    rejections exited 8 via CTest: production angle and forced GoogleTest
+    includes, and direct and forced includes of a private header from support.
+
+    Positive fixtures cover both forms of defined, an external header probe,
+    warning and color flags on compile and link commands, the public transitive
+    header chain, quoted GoogleTest in tests, header-only support, and compiled
+    test support with a support header using a module-public interface.
+
+Additional CMake floor verification on dev01
+    The Kitware archive was copied from the previous verification scratch directory.
+    From "$scratch":
+
+  floor=cmake-3.25.3-linux-x86_64
+  printf '%s  %s\n' d4d2ba83301b215857d3b6590cd4434a414fa151c5807693abe587bd6c03581e "$floor.tar.gz" | sha256sum -c -
+  tar -xzf "$floor.tar.gz"
+  export PATH="$scratch/$floor/bin:$PATH"
+  cmake --version
+  cd "$scratch/tree"
+  flock "$HOME/doqe-quiet.lock" cmake --preset debug -B "$scratch/cmake-floor"
+  flock "$HOME/doqe-quiet.lock" cmake --build "$scratch/cmake-floor" --parallel 4
+  flock "$HOME/doqe-quiet.lock" ctest --test-dir "$scratch/cmake-floor" --output-on-failure
+  bash tests/integration/module-boundaries/run.sh
+
+The archive digest matched. CMake reported 3.25.3. Configure, build, CTest
+and the entire fixture runner exited 0. CTest passed 7/7. The 54 fixture
+exit codes and diagnostic assertions matched the standard runs.
+
+Pre-fix evidence (Mac)
+    The baseline used the original checker and the new fixtures in a disposable copy.
+    A scratch AWK wrapper allowed the run to continue past known discrepancies without
+    changing the repository's fixture assertions.
+
+  scratch=/private/tmp/doqe-t0005-repair.VMb3q4
+  (cd "$scratch/baseline" && bash tests/integration/module-boundaries/run.sh) >"$scratch/baseline-final.log" 2>&1
+
+    The old checker accepted the unquoted edge, server object library, private
+    export, unknown executable, and both GoogleTest seeds with exit 0. It rejected
+    the feature guard, the diagnostic flags, the header-only support include,
+    and the test support library link. The baseline stopped at the test support
+    configure rejection.
+
+Additional -Wall check (Mac)
+    From "$scratch/tree", both commands exited 0.
+
+  cmake --preset debug -B "$scratch/wall" -DBUILD_TESTING=OFF -DCMAKE_CXX_FLAGS=-Wall
+  cmake --build "$scratch/wall" --target module-boundaries --parallel 4
+
+Search cache check (Mac)
+    Ran the checker directly against the completed Debug build with CMake tracing.
+
+  checker="$scratch/tree/cmake/check-module-includes.cmake"
+  cmake --trace-expand --trace-source="$checker" "-DSOURCE_DIR=$scratch/tree" \
+    "-DBINARY_DIR=$scratch/debug" "-DNINJA=$(command -v ninja)" \
+    "-DCLANG=$HOME/opt/llvm-23.1.5/bin/clang++" "-DC_COMPILER=$HOME/opt/llvm-23.1.5/bin/clang" \
+    -DBUILD_TESTING=ON -DTEST_LINKS=cli -DSUPPORT_LINKS=cli \
+    "-DGOOGLETEST_SOURCE_DIR=$scratch/debug/_deps/googletest-src" -P "$checker" >"$scratch/cache.log" 2>&1
+  rg -c ':  compiler_search_paths\(' "$scratch/cache.log"
+  rg 'string\(SHA256 search_key ' "$scratch/cache.log" | sed 's/^.*search_key //' | sort -u | wc -l
+  rg -c 'execute_process\(COMMAND .* -E -v - -o /dev/null' "$scratch/cache.log"
+
+    Checker exit 0. 17 lookup calls, 16 unique keys, and 16 Clang search invocations.
+
+Logs
+  Mac: /private/tmp/doqe-t0005-checked.cDue1R/
+  dev01: /tmp/doqe-t0005-checked.15Q9XV/
+  Both: verify-summary.log, debug-test.log, asan-test.log, format.log, lint.log,
+        modules.log, skeleton.log, quality.log
+  Mac: skeleton-clean.log, cache.log, wall-configure.log, wall-build.log
+  Mac pre-fix: /private/tmp/doqe-t0005-repair.VMb3q4/baseline-final.log
+  dev01: floor.log, floor-test.log, floor-modules.log
+  An initial dev01 transfer included macOS AppleDouble files. Its format failure
+  came from the extra files. The clean transfer matched the working tree digest.
+
+Not verified
+  Hosted GitHub Actions, CI on main, and the macOS SDK 26.0 job.
+
+Post-review change (Mac only, 2026-11-21)
+  The round-3 worker had added an "edge-notes" HTML comment to accepted ADR-0002.
+  Accepted ADRs are not edited, so the comment was reverted (adr.md now equals
+  main). cmake/check-module-edges.cmake now strips prose after "`. " instead.
+  Tree SHA-256 after this change (same command as above):
+    d462ca19b703e6f4f2a44835d9ec3d39daa22dfafe5cb42fea08f7a21400312d
+  Commands and results:
+    cmake -P cmake/check-module-edges.cmake -> "Module edge table matches ADR-0002", exit 0
+    Seeds in a copy outside the repo, each rejected:
+      cli cell "`api`, engine"            -> Invalid dependency cell ... for cli
+      engine cell "... `maintain`, `api`. Add" -> Module edge table differs from ADR-0002
+      engine cell "`maintain` add `dist`" -> Invalid dependency cell ... for engine
+    bash tests/integration/module-boundaries/run.sh -> "All module boundary fixtures passed", exit 0
+  Not rerun after this change: dev01, the CMake 3.25.3 floor, ASan+UBSan.

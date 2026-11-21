@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-namespace doqe {
+namespace doqe::cli {
 
 std::string version_string(std::string_view version, std::string_view commit, bool dirty) {
   std::string result = "doqe ";
@@ -17,4 +17,4 @@ std::string version_string(std::string_view version, std::string_view commit, bo
   return result;
 }
 
-} // namespace doqe
+} // namespace doqe::cli

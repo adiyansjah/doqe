@@ -133,6 +133,10 @@ jobs:
         if: '!matrix.cmake_floor'
         run: cmake --build --preset quality
 
+      - name: Module boundary fixtures
+        if: '!matrix.cmake_floor'
+        run: bash tests/integration/module-boundaries/run.sh --ci
+
       - name: ASan and UBSan workflow
         if: '!matrix.cmake_floor'
         run: cmake --workflow --preset asan-ubsan

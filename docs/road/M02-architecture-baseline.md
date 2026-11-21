@@ -7,7 +7,7 @@ so every later feature lands in a known module with known boundaries. No data fe
 
 ## Features
 - F02.1 Architecture decision: ADR-0002 (modules, layers, dependency rules, code layout, error policy, column format principles, public surfaces) → [T0004](../work/T0004-adr-0002-architecture/task.md) ✅
-- F02.2 Module skeleton: one static library per active module with a placeholder source as needed and the allowed dependencies enforced → task not yet created
+- F02.2 Module skeleton: one static library per active module with a placeholder source as needed and the allowed dependencies enforced → [T0005](../work/T0005-module-skeleton/task.md)
 
 ## Exit criteria
 - [x] ADR-0002 is accepted

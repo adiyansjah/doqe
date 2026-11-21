@@ -1,5 +1,7 @@
 # Column types and buffers
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/column/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/column/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ Renaming or reordering an Iceberg field preserves its batch-schema ID. Published
 
 ## Planned
 
-Create the target in F02.2. Define layouts in the In-memory column format details ADR.
+Define layouts in the In-memory column format details ADR.
 
 ## Open questions
 

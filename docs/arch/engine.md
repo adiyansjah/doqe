@@ -1,5 +1,7 @@
 # Engine composition and query lifecycle
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/engine/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/engine/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ Each query uses one query pool and enforces its own budget. A procedure register
 
 ## Planned
 
-Create the target in F02.2. Wire the first single-node SQL slice. Enable a dist-backed runner when dist is activated.
+Wire the first single-node SQL slice. Enable a dist-backed runner when dist is activated.
 
 ## Open questions
 

@@ -1,0 +1,8 @@
+#ifndef DOQE_MODULE_FIXTURE_ENGINE_HPP
+#define DOQE_MODULE_FIXTURE_ENGINE_HPP
+
+namespace doqe::engine {
+inline constexpr bool boundary_fixture = true;
+}
+
+#endif

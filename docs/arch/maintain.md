@@ -1,5 +1,7 @@
 # Table maintenance
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/maintain/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/maintain/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ Rewrites use the same conditional publication contract as ordinary writes. After
 
 ## Planned
 
-Create the target in F02.2. Add maintenance operations after their table primitives. Share an authorization point with SQL and server under the Governance and authorization ADR.
+Add maintenance operations after their table primitives. Share an authorization point with SQL and server under the Governance and authorization ADR.
 
 ## Open questions
 

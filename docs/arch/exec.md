@@ -1,5 +1,7 @@
 # Physical execution
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/exec/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/exec/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ Position deletes use original file row numbers. Equality deletes match null keys
 
 ## Planned
 
-Create the target in F02.2. Add the distributed runner seam when needed.
+Add the distributed runner seam when needed.
 
 ## Open questions
 

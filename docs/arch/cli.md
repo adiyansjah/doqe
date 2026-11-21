@@ -1,5 +1,8 @@
 # Command-line interface
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/cli/` (not yet created)
+Status: partial · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/cli/`
+
+The CLI implements `doqe --version`. The command owns version formatting and
+build provenance because both are part of its output contract.
 
 ## Responsibility
 
@@ -19,7 +22,7 @@ The CLI has only the api module as a direct dependency. Query and maintenance su
 
 ## Planned
 
-Create the target in F02.2 and preserve the existing version command.
+Add SQL, interactive, and administrative commands.
 
 ## Open questions
 

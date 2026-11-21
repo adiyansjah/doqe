@@ -1,5 +1,7 @@
 # File codecs
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/format/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/format/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ The format target has zero links or includes to table, catalog, and exec. Codec 
 
 ## Planned
 
-Create the target in F02.2. Select JSON, Avro, and Parquet implementations in their respective ADRs.
+Select JSON, Avro, and Parquet implementations in their respective ADRs.
 
 ## Open questions
 

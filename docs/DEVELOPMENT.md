@@ -71,8 +71,8 @@ cmake --build --preset debug --target format
 cmake --build --preset debug --target lint
 ```
 
-Format checks Git-tracked C and C++ sources, headers, and C++ header templates with the pin's
-clang-format. Lint runs the pin's clang-tidy on project-owned translation units selected from
+Format checks Git-tracked and non-ignored new C and C++ sources, headers, and C++ header
+templates with the pin's clang-format. Lint runs the pin's clang-tidy on project-owned translation units selected from
 the Debug compilation database. It reports header diagnostics under the checkout's source
 path and treats warnings as errors. Build directories and fetched GoogleTest sources are
 excluded.
@@ -140,6 +140,59 @@ bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
 
 `doqe --version` appends `-dirty` when Git reports worktree changes, including untracked files.
 
+## Module layout and checks
+
+[ADR-0002](adrs/0002-architecture-modules/adr.md) assigns one `doqe_<module>` static library
+to each active module under `src/<module>/`. Keep private headers under the module source
+directory and public headers under `src/<module>/include/doqe/<module>/`. Module tests live in
+`tests/<module>/` and integration tests in `tests/integration/`. The CLI executable is built
+from `src/cli/` and is emitted at the root of the build directory.
+
+The [edge table](../cmake/modules.cmake) defines direct module links. Prefix a dependency
+with `+` when public headers need it. Configure validates the static module types, public
+include roots, declared links, link-related target properties and source ownership. Module
+archives use their default target names. The executable targets are `doqe` and, with
+`BUILD_TESTING`, `doqe_tests`.
+The boundary target checks the final CLI and test link commands against the generated
+paths of declared archives, each executable's compiled objects, and the pinned runtimes.
+Tests link module targets and GoogleTest and compile their own sources under `tests/`.
+GoogleTest headers are test-only.
+
+Use literal, quoted `doqe/<module>/...` includes for public dependencies. Use the test-only
+include path to reach a module's private headers from its module tests. Integration tests
+use module-public headers. Put shared fixtures in `tests/support/` and include their headers
+with quoted relative paths such as `"../support/fixture.hpp"`. For compiled support, add a
+test-only static `doqe_test_support` target and link it to `doqe_tests`. Support sources and
+headers use module-public interfaces and declare their module links on the support target.
+Header-only support uses the test executable's declared module links.
+
+The checker reads every file under the module and test roots as C++, with exceptions for
+`CMakeLists.txt`, `.gitkeep`, and `*.in`. Keep documentation elsewhere. The generated CLI
+version header is the only generated header the checker currently supports. Pinned Clang
+supplies preprocessing tokens and include search paths.
+The checker accepts supported compile flags and quoted headers resolved outside
+project-owned roots. Ninja's recorded compiler dependencies may reach direct dependencies
+and their public transitive dependencies. Apply the same path rules to `#embed` as to
+`#include`. Use `__has_include` and `__has_embed` only for external resources, with literal
+names and without macro aliases.
+
+The checks catch ordinary build and source mistakes. Code review covers symbol-level use
+without headers and deliberate build-script tricks such as archive edits performed by
+`POST_BUILD` or custom commands and overrides of `CMAKE_CXX_ARCHIVE_CREATE`.
+
+Both CTest and the boundary target build the checked targets before reading Ninja's
+dependencies. The separate `Modules.AdrEdges` CTest compares the CMake edge table with
+ADR-0002. The fixture runner checks the public include chain and seeded violations in a
+disposable copy. Run the runner directly
+on dev01, where it takes the quiet lock itself.
+
+```sh
+ctest --preset debug -R '^Modules\.'
+cmake --build --preset debug --target module-boundaries
+cmake -P cmake/check-module-edges.cmake
+bash tests/integration/module-boundaries/run.sh
+```
+
 ## Checks
 The tool that covers each check kind in WORKFLOW.md.
 
@@ -149,6 +202,7 @@ The tool that covers each check kind in WORKFLOW.md.
 | races and leaks | | |
 | fuzz / property tests | libFuzzer from the pin (planned) | |
 | static checks and formatting | clang-tidy and clang-format from the pin, `quality` build preset | Mac, dev01, both CI platforms |
+| module boundaries | CMake link validation, CTest `Modules.IncludeBoundaries` and `Modules.AdrEdges`, and seeded fixture script | Mac, dev01, both CI platforms |
 | target platforms | Debug workflow on macOS 26 arm64 and Debian 13 x86_64 | Mac, dev01, both CI platforms |
 | toolchain floors | Debug with CMake 3.25.3 and Ninja 1.12.1 on Debian 13, Debug with macOS SDK 26.0 | CI |
 

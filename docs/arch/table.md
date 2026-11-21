@@ -1,5 +1,7 @@
 # Iceberg table semantics
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/table/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/table/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -22,7 +24,7 @@ Iceberg schemas, scan tasks, data-file metadata, table updates, and the metadata
 
 ## Planned
 
-Create the target in F02.2. Decide external library use in the Iceberg library strategy ADR.
+Decide external library use in the Iceberg library strategy ADR.
 
 ## Open questions
 

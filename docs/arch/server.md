@@ -1,5 +1,7 @@
 # Network server
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/server/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/server/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ Query and maintenance requests pass through engine. Server maps `base::Status` t
 
 ## Planned
 
-Create the target in F02.2. Choose the protocol in the Server wire protocol ADR. Share an authorization point with SQL and maintenance under the Governance and authorization ADR.
+Choose the protocol in the Server wire protocol ADR. Share an authorization point with SQL and maintenance under the Governance and authorization ADR.
 
 ## Open questions
 

@@ -109,7 +109,7 @@ check_gtest_flags() {
 inspect_runtime() {
   local log=$2
   run_logged "$log" cmake "-DHOST_SYSTEM=$host" \
-    "-DDOQE=$1/doqe" "-DDOQE_TESTS=$1/doqe_tests" -P tests/check-runtime-dependencies.cmake
+    "-DDOQE=$1/doqe" "-DDOQE_TESTS=$1/doqe_tests" -P tests/integration/check-runtime-dependencies.cmake
   cat "$logs/$log"
 }
 
@@ -144,7 +144,7 @@ mkdir "$seeded"
 cp -R CMakeLists.txt CMakePresets.json cmake src tests "$seeded/"
 printf '\nadd_library(header_probe OBJECT header_probe.cpp)\n' >>"$seeded/CMakeLists.txt"
 printf 'static_assert(true);\n' >"$seeded/header_probe.cpp"
-cat >> "$seeded/tests/version_test.cpp" <<'CPP'
+cat >> "$seeded/tests/cli/version_test.cpp" <<'CPP'
 
 TEST(SkeletonCheck, SeededFailure) {
   FAIL() << "intentional skeleton check";
@@ -277,18 +277,16 @@ exported="$logs/exported"
 mkdir "$exported"
 cp -R CMakeLists.txt CMakePresets.json cmake src "$exported/"
 ln -s "$pin" "$logs/alternate LLVM"
-cat >> "$exported/CMakeLists.txt" <<'CMAKE'
-
-add_executable(allowlist allowlist.cpp)
-CMAKE
-cat > "$exported/allowlist.cpp" <<'CPP'
+# Compile the probe as part of the allowed CLI executable.
+printf '\ntarget_sources(doqe PRIVATE allowlist.cpp)\n' >> "$exported/src/cli/CMakeLists.txt"
+cat > "$exported/src/cli/allowlist.cpp" <<'CPP'
 #include <bit>
 #include <expected>
 #include <utility>
 
 enum class Code : unsigned { bytes = 0x12345678u };
 
-int main() {
+constexpr int check_cxx23_allowlist() {
   std::expected<unsigned, int> value = std::to_underlying(Code::bytes);
   if (!value || std::byteswap(*value) != 0x78563412u) {
     return 1;
@@ -300,6 +298,8 @@ int main() {
   }
   std::unreachable();
 }
+
+static_assert(check_cxx23_allowlist() == 0);
 CPP
 (
   cd "$exported"
@@ -313,6 +313,5 @@ CPP
   version=$(./build/debug/doqe --version)
   [[ $version == 'doqe 0.1.0 (unknown)' ]]
   printf 'Exported source and alternate LLVM root: %s\n' "$version"
-  ./build/debug/allowlist
   echo 'C++23 library allowlist smoke: passed'
 )

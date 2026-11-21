@@ -1,5 +1,7 @@
 # Foundation
-Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) (proposed) · Code: `src/base/` (not yet created)
+Status: planned · ADRs: [ADR-0002](../adrs/0002-architecture-modules/adr.md) · Code: `src/base/` (empty skeleton)
+
+The static target is an empty skeleton.
 
 ## Responsibility
 
@@ -19,7 +21,7 @@ Constructing `OutOfMemory` works when allocation fails. A rejected budget charge
 
 ## Planned
 
-Create the target in F02.2. Add contracts with their first callers.
+Add contracts with their first callers.
 
 ## Open questions
 

@@ -54,9 +54,14 @@ Allocation-family mismatch detection runs on Linux, where compiler-rt's `asan_cx
 `operator new` and `operator delete`. Shared libraries and plugins will need an exported-symbols
 design via an ADR. [Development checks](../DEVELOPMENT.md#checks)
 
-M02 proposes coarse static libraries linked only to declared lower-layer dependencies.
-The engine composes SQL, catalog, execution, and maintenance for the server and embedding façade.
+The 13 active modules build as static libraries with links restricted to declared lower-layer dependencies.
+The engine will compose SQL, catalog, execution, and maintenance for the server and embedding façade.
 The module map and allowed edges are in [ADR-0002](../adrs/0002-architecture-modules/adr.md#layers-and-direct-dependencies-criteria-1-and-4).
+The build checks declared links, final CLI and test link inputs, and source inclusion.
+Module targets export only their public include roots. Shared test support uses module-public
+interfaces, and GoogleTest headers are limited to test targets.
+Code review covers symbol-level use without headers and deliberate build-script tricks,
+including custom archive edits and overrides of `CMAKE_CXX_ARCHIVE_CREATE`.
 Distributed execution is deferred beyond M02.
 
 ## Parts
@@ -74,5 +79,5 @@ Distributed execution is deferred beyond M02.
 | [engine.md](engine.md) | Engine composition and query lifecycle | planned |
 | [api.md](api.md) | Embeddable C++ API | planned |
 | [server.md](server.md) | Network server | planned |
-| [cli.md](cli.md) | Command-line interface | planned |
+| [cli.md](cli.md) | Command-line interface | partial |
 | [dist.md](dist.md) | Distributed execution | planned |

@@ -5,13 +5,13 @@
 
 #cmakedefine01 DOQE_DIRTY
 
-namespace doqe {
+namespace doqe::cli {
 
 inline constexpr std::string_view build_version = "@DOQE_VERSION@";
 inline constexpr std::string_view build_commit = "@DOQE_COMMIT@";
 inline constexpr bool build_dirty = DOQE_DIRTY;
 
-} // namespace doqe
+} // namespace doqe::cli
 
 #undef DOQE_DIRTY
 #endif
