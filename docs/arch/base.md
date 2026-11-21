@@ -19,6 +19,12 @@ Callers pass the original payload pointer from `Allocate` to `Free`, including w
 holds a placement-constructed object. The pool uses this pointer to read the header in the
 backing byte array. Allocation aborts if the live-byte count already exceeds the pool limit. Debug builds also reject unknown pointers and double frees through a synchronized registry. The final reference destroys the pool on the releasing thread, and destruction with live bytes aborts.
 
+## Tests
+
+`doqe_status_tests` links its allocation probes with GoogleTest and `doqe_base`.
+The separate executable keeps the replacement operators out of the Linux ASan
+allocation-mismatch checks in `doqe_tests`.
+
 ## Planned
 
 Add cancellation, observability sinks, and other primitives with their first callers.
