@@ -63,4 +63,10 @@ Hard rules (ADR-0002)
 - After `CommitStateUnknown` (or an unrecognised commit error), never clean up written files; reconcile first.
 - Production code never depends on tests, test support, benchmarks or tools.
 
+Hard rules (ADR-0003)
+- Iceberg metadata, JSON, Avro and Parquet readers are in-house; no third-party code for them without a new ADR.
+- Match Parquet columns only by Iceberg field ID; never by name or position.
+- All reader allocations go through the query memory budget (`ResourceExhausted` over budget, `OutOfMemory` on allocator failure).
+- Compression codecs (zlib, zstd, Snappy) need their own ADR before use.
+
 File names in links must match the exact case.

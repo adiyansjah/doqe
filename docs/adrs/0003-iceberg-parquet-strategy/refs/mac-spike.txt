@@ -1,0 +1,170 @@
+Date: 2026-11-21 (+0700)
+Machine: Skyfall.local, Mac16,10, Apple M4, arm64, 10 logical CPUs, 16 GiB RAM
+OS: macOS 26.6.2 (25G83), macOS SDK 26.5, deployment target 26.0
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117),
+  pinned llvm-ar/llvm-ranlib and libc++ headers, CMake 4.4.0, Ninja 1.13.2.
+  Compiler and static runtime SHA-256 digests matched the doqe macOS pin.
+Build settings: Release, -stdlib=libc++ -nostdinc++, -nostdlib++ on C++ links,
+  explicit static libc++.a/libc++abi.a, platform system unwinder, no exported
+  executable symbols, -Werror=unguarded-availability, Ninja -j4 per library
+  build, no C++ module scanning. Carquet supplied -flto=auto for its
+  Release C compilation. Neither Arrow nor iceberg-cpp used that flag.
+doqe base commit: a54308f1a5dd0459efd30146291918c907d5fe96
+Inputs: Carquet v0.8.0 337a532ecf549d600958b210fe76734deaef8daf,
+  Arrow 26.0.1 9e5d6978e9acf372cc989aaaf94e863fe8582c90,
+  iceberg-cpp v0.4.0 64dc66f159bd62c9817a96d74cbce767268934d0 (bundled Arrow 25.0.0)
+Reproduce: sh docs/adrs/0003-iceberg-parquet-strategy/refs/mac-spike.sh
+
+Method
+------
+This is a hand-compiled summary of retained logs, build trees, probe outputs
+and source artifacts. The replay script checks both compiler drivers and the
+static runtime archives against the macOS doqe pin, verifies the candidate
+source archive hashes, and builds in a fresh mktemp directory under /tmp.
+CMake and Ninja were already installed.
+Native libraries were built from source. Python 3.12.11, PyIceberg 0.12.0,
+and PyArrow 26.0.1 were used in an isolated fixture-generator environment.
+No system installation, doqe build, or dev01 access.
+
+Elapsed seconds are wall time from /usr/bin/time -p. Configure time includes
+dependency fetches done by CMake. Build time includes build-time fetches and
+linking where applicable. Top-level source downloads and Python setup are outside
+the timings. The initial attempts overlapped and contain warm retries. The
+standalone script builds each reader in a fresh build tree in sequence. These
+are build observations with different dependency and codec closures, Release
+flags and network conditions. Carquet's probe reads three Parquet profiles,
+Arrow's probe reads the uncompressed baseline, and iceberg-cpp plans and reads
+one complete Iceberg snapshot over that baseline. The build times and sizes
+describe those configurations. Scan throughput was outside the spike.
+
+Archive counts and sums use the paths listed as static inputs of the probe
+link command, excluding LLVM runtime archives. They count archive bytes before
+linking, which includes code the linker may not select. Executables are unstripped
+Mach-O file bytes. Dependency counts are distinct external source projects
+acquired by the candidate build, including header-only projects, excluding the
+candidate itself, in-tree vendored code, system/SDK libraries, C++ runtime,
+build tools and Python fixture dependencies. Arrow and Parquet share one source
+project. Static archive count and source project count measure different things.
+
+Retained sequential replay: all builds and value checks passed
+--------------------------------------------------------------
+Candidate                 Configure (s)   Build + link (s)   Probe bytes   Main archive bytes   Static inputs (count, total bytes)   Source projects
+Carquet v0.8.0                    11.40               3.70       349,200            1,507,760               4 / 2,704,488                   3
+Arrow Parquet 26.0.1              28.82              55.17    15,643,512            8,052,712              13 / 34,022,072                  6
+iceberg-cpp v0.4.0                61.95             109.19    27,587,056            3,707,136              17 / 87,512,536                 10
+
+Carquet:
+  Main archive libcarquet.a. External projects zstd 1.5.6, zlib 1.4 and
+  LZ4 1.10.0. Snappy and Thrift Compact Protocol code ship in Carquet.
+  Bundled static codecs; Brotli, OpenMP, CLI and native CPU flags disabled.
+  Direct dynamic load commands: libSystem.
+Arrow:
+  Main archive libparquet.a, plus libarrow.a (23,025,072 bytes). Acquired
+  Thrift 0.24.0, Boost 1.92.0, simdjson 4.6.4, xsimd 14.2.0, uriparser
+  1.0.2 and zlib 1.3.1. Bundled zlib was built and linked even with
+  ARROW_WITH_ZLIB=OFF in the cache. Snappy and zstd were disabled.
+  Direct dynamic load commands: libSystem, libiconv.
+iceberg-cpp:
+  Main archive libiceberg_bundle.a, plus libiceberg.a (40,285,632 bytes)
+  and libiceberg_data.a (2,102,728 bytes). Acquired Arrow 25.0.0
+  (includes Parquet), Avro C++, nanoarrow, CRoaring, utf8proc,
+  nlohmann/json, Thrift 0.22.0, Boost 1.88.0, xsimd and RapidJSON.
+  The bundle uses SDK zlib. REST, Hive, SQL catalogs, S3 and spdlog were
+  disabled. Avro Snappy and zstd were absent in the tested configuration.
+  Direct dynamic load commands: libSystem, libiconv, libz.
+All three probes linked without a direct shared C++ runtime load command
+in otool -L. The package source and licence references are in sources.md.
+
+Resolved transitive source inputs
+---------------------------------
+Git revisions are HEADs from the retained sequential build trees. SHA-256
+values identify the retained download bytes. For CRoaring and nlohmann/json,
+upstream configured no archive hash, so these are observed digests. The
+replay script prints the fetched Git revisions and hashes retained archives.
+The Python fixture-generator environment is outside this source inventory.
+
+Carquet (Git):
+  zstd v1.5.6             794ea1b0afca0f020f4e57b6732332231fb23c70
+  zlib v1.4               99623ef7097352da7993ba614161fd6a311e046e
+  LZ4 v1.10.0             ebb370ca83af193212df4dcbadcc5d87bc0de2f0
+
+Arrow (archive SHA-256):
+  Thrift 0.24.0           e0fa5839a4c5c1d631b0931cf2c554ebbfa4e2fee3a9fb3ffd4f82ce4396c6e4
+  Boost 1.92.0 (CMake)    f51707c27359a0df0cac1beada86de31bb5eed5e8285592dadec384df99c2984
+  simdjson v4.6.4         b091107844fe928158c5c2265c20360fff312889ddf7ebc4528a0f0f8f2ff9cd
+  xsimd 14.2.0            21e841ab684b05331e81e7f782431753a029ef7b7d9d6d3ddab837e7782a40ee
+  uriparser 1.0.2         dd2e4843f43de6f5aedf430e530f1e2d159eba8ca4d64c2787af1c20f707a9e4
+  zlib 1.3.1              9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+
+iceberg-cpp:
+  Avro C++ (Git)          209a3735ec330679790824da54b7558db55e4e7f
+  Archive SHA-256:
+  Arrow 25.0.0            12afc2dc8137bdd4a68876cec939f664c9d55cfc7b75f55b45163ebb4e344d81
+  nanoarrow 0.9.0         801200a0e95e869d5c4bdeb5b535dba58551482bb782b7dc8bd599c8b6e8cacf
+  CRoaring v4.4.3         affe456e3bbd941ac97c64a9d9d9988be1c80f07f6071e38170aceca94dce238
+  utf8proc v2.10.0        276a37dc4d1dd24d7896826a579f4439d1e5fe33603add786bb083cab802e23e
+  nlohmann/json v3.11.3   d6c65aca6b1ed68e7a182f4757257b107ae403032760ed6ef121c9d55e81757d
+  Thrift 0.22.0           794a0e455787960d9f27ab92c38e34da27e8deeda7a5db0e59dc64a00df8a1e5
+  Boost 1.88.0 (CMake)    dcea50f40ba1ecfc448fdf886c0165cf3e525fef2c9e3e080b9804e8117b9694
+  xsimd 14.2.0            21e841ab684b05331e81e7f782431753a029ef7b7d9d6d3ddab837e7782a40ee
+  RapidJSON source        b9290a9a6d444c8e049bd589ab804e0ccf2b05dc5984a19ed5ae75d090064806
+  RapidJSON archive URL supplies revision 232389d4f1012dddec4ef84861face2d2ba85709.
+
+Fixture and value checks
+------------------------
+One PyIceberg SQLite-backed generation produced a local, unpartitioned,
+format-v2 table with one snapshot, one manifest list, one data manifest
+and one Parquet data file (no delete files). Both Avro containers used
+the null codec. The generator verified the table through PyIceberg and
+reported absolute file URIs. Parquet fields carry IDs 1 and 2, and both
+columns are nullable. The generated metadata includes the name mapping
+added by PyIceberg's add_files. F03.6 adds an independent field-ID fixture
+whose active metadata omits this property. Each native probe output was compared by diff to
+the following independently specified rows, with an empty string in row 2
+and a null string in row 3.
+
+  (42, "hello")
+  (null, "")
+  (-3, null)
+  (0, "é")
+
+Carquet read one row group for each of three files. The profiles were
+uncompressed/PLAIN/V1, Snappy/dictionary/V1, and zstd/dictionary/V2.
+PyArrow reported RLE and PLAIN for the baseline, and RLE_DICTIONARY,
+RLE and PLAIN for the dictionary samples. Carquet's probe used ordinal
+access on this controlled fixture. The public schema API does not expose
+Parquet field IDs at this pin even though its internal wire schema retains
+them. The probe uses the library's path API. A doqe buffer adapter,
+per-reader allocations, and rename/reorder behavior were not verified.
+
+Arrow read values and null definition levels with the low-level typed API
+on the uncompressed baseline and asserted both Parquet field IDs.
+iceberg-cpp planned one scan task from the metadata JSON and both Avro
+layers, opened that task, and read the same rows from its Arrow C stream.
+
+Initial attempts and recoveries
+-------------------------------
+Carquet: The first configure took 17.61 s and failed to generate our
+C++ consumer target because Carquet declares only the C language.
+Enabling CXX for the throwaway probe fixed that (warm configure 1.08 s,
+build/link 6.29 s). No Carquet reader source patch was applied.
+Arrow: 49.68 s configure, 71.83 s archive build, 1.45 s probe reconfigure,
+0.79 s incremental probe build/link. Thrift was fetched from Apache's
+archive by overriding the upstream download URL at the same pin.
+iceberg-cpp: 73.34 s configure, 119.85 s archive build, 1.41 s probe
+reconfigure. Corrected two probe API call signatures after a 0.66 s
+compile failure. The next link attempt (1.25 s) failed because the
+Boost.UUID link interface added -latomic, absent from the Mac SDK.
+BOOST_UUID_LINK_LIBATOMIC=OFF fixed it (1.29 s reconfigure, 0.15 s
+incremental link). No iceberg-cpp source patch was applied.
+The first packaged replay exposed path quoting in Arrow's nested zlib
+CMake configure. Passing the tested unquoted flag value resolved it.
+
+Not verified
+------------
+Debian 13 x86_64, CMake 3.25/Ninja 1.12.1 floor, SDK 26.0 floor,
+sanitizers, full third-party C++23 library allowlist conformance, source-pin
+adoption in doqe, memory bounds, relative fixture relocation, malformed-file
+coverage, writes, and Iceberg v3 functionality. This was a native build and
+small data smoke test, independent of production integration. The revised
+script was checked against the retained artifacts without a fresh build.

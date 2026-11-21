@@ -70,5 +70,6 @@ Newest first.
 
 | #    | Date | Title | Status |
 |------|------|-------|--------|
+| [0003](0003-iceberg-parquet-strategy/adr.md) | 2026-11-21 | Use in-house readers for the first Iceberg scans | accepted |
 | [0002](0002-architecture-modules/adr.md) | 2026-11-21 | Use layered modules with one static library each | accepted |
 | [0001](0001-core-cpp-toolchain/adr.md) | 2026-11-20 | Use C++23, LLVM Clang and CMake for the core toolchain | accepted |
