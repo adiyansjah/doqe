@@ -78,3 +78,56 @@ and compared the remote and Mac source diffs byte for byte.
   Log: /home/dev/doqe-t0008/logs/path-max-quality.log.
 
 Main CI was not verified.
+
+2026-11-21 verification after rebasing onto T0010
+
+Date: 2026-11-21T11:08:43Z
+Machine: dev01, x86_64
+OS: Debian 13.7, Linux 6.12.117+deb13-cloud-amd64, glibc 2.41
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117),
+  CMake 3.31.6, Ninja 1.12.1
+Build settings: Debug and ASan+UBSan, C++23, pinned static libc++ and libc++abi.
+  Sanitizer tests use ASAN_OPTIONS=detect_stack_use_after_return=1.
+Commit: e453685ab1eb8620e951ceacc9156677f9e52260 (clean t0008-metadata-json)
+
+Created and verified a complete bundle with
+`git bundle create "$bundle" t0008-metadata-json` and
+`git bundle verify "$bundle"`. Copied it with
+`scp "$bundle" dev@dev01:/home/dev/doqe-t0008-rebased/source.bundle`.
+Via `ssh dev@dev01 'bash -s'`, cloned it into the fresh checkout with
+`git clone --branch t0008-metadata-json source.bundle checkout` from
+`/home/dev/doqe-t0008-rebased`. Confirmed the full HEAD SHA and empty
+porcelain status before verification. All remote work ran as dev.
+
+- bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+  Exit 0. Debug and ASan+UBSan each passed 64/64, including both module
+  boundary tests. Format, lint and static sanitizer runtime checks passed.
+  The script confirmed sanitizer flags on 32 translation units, including
+  both GoogleTest units. The missing-static-ASan, format and lint controls
+  each exited 1 with the expected diagnostic. CTest exited 8 on each of
+  the six runtime seeds and the script matched each diagnostic:
+
+  use-after-free  AddressSanitizer: heap-use-after-free
+  heap-overflow   AddressSanitizer: heap-buffer-overflow
+  signed-overflow runtime error: signed integer overflow
+  new-free        AddressSanitizer: alloc-dealloc-mismatch (operator new vs free)
+  array-delete    AddressSanitizer: alloc-dealloc-mismatch (operator new [] vs operator delete)
+  sized-delete    AddressSanitizer: new-delete-type-mismatch
+- cmake --workflow --preset debug
+- cmake --workflow --preset asan-ubsan
+  Both exited 0 in the bundle checkout under the quiet lock. CTest passed
+  64/64 in each preset.
+- cmake --build --preset debug --target module-boundaries
+  Exit 0. Include boundaries passed for all 13 modules.
+- ctest --preset debug -R '^Modules\.'
+  Exit 0. Modules.IncludeBoundaries and Modules.AdrEdges passed (2/2).
+- ctest --preset debug -V --no-tests=error -R '(^|/)Status(Test|AssignmentTest)\.'
+- ctest --preset asan-ubsan -V --no-tests=error -R '(^|/)Status(Test|AssignmentTest)\.'
+  Both exited 0. All eight Status cases ran from the respective
+  doqe_status_tests executable. The first filter, '^Status\.', matched
+  zero cases and exited 8 before the corrected run.
+
+Logs: rebased-dev01-quality-checks.log, rebased-dev01-module-status.log and
+rebased-dev01-status-suite.log under
+/private/tmp/claude-501/-Users-adiyansjah-Development-Personal-doqe/1698885a-eb32-449f-826f-d4d5247ea0c7/scratchpad/t0008-logs/.
+Main CI was not verified. The JSON fuzz command ran on the Mac.

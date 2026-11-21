@@ -136,3 +136,39 @@ src/io/local_file.cpp diff replacing the non-Apple <climits> include with
 
 Logs are in the review-fix log directory above. ASan+UBSan and fuzzing
 were not rerun for this include change.
+
+2026-11-21 verification after rebasing onto T0010
+
+Date: 2026-11-21T11:08:41Z
+Machine: Skyfall.local, arm64
+OS: macOS 26.6.2 (25G83), SDK 26.5
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117),
+  CMake 4.4.0, Ninja 1.13.2
+Build settings: Debug, ASan+UBSan and libFuzzer presets with the pinned toolchain
+Commit: e453685ab1eb8620e951ceacc9156677f9e52260 (clean t0008-metadata-json)
+
+- cmake --preset debug && cmake --build --preset debug && ctest --preset debug
+  Exit 0 for each command. CTest passed 64/64 (3.68 s).
+- cmake --workflow --preset asan-ubsan
+  Exit 0. CTest passed 64/64 (6.78 s).
+- cmake --build --preset quality
+  Exit 0. Format and lint passed.
+- cmake --build --preset debug --target module-boundaries
+  Exit 0. Include boundaries passed for all 13 modules.
+- ctest --preset debug -R '^Modules\.'
+  Exit 0. Modules.IncludeBoundaries and Modules.AdrEdges passed (2/2).
+- ctest --preset debug -V --no-tests=error -R '(^|/)Status(Test|AssignmentTest)\.'
+- ctest --preset asan-ubsan -V --no-tests=error -R '(^|/)Status(Test|AssignmentTest)\.'
+  Both exited 0. All eight Status cases ran from the respective
+  doqe_status_tests executable. An initial filter of '^Status\.' matched
+  zero cases and was replaced with the filter above.
+- cmake --preset libfuzzer && cmake --build --preset libfuzzer
+  Exit 0 for both commands.
+- DOQE_JSON_FUZZ_WORK="$(mktemp -d "${TMPDIR:-/tmp}/doqe-json-fuzz.XXXXXX")"
+  ./build/libfuzzer/doqe_json_fuzz -max_total_time=30 -rss_limit_mb=1024 -max_len=65536 -seed=1 -artifact_prefix="$DOQE_JSON_FUZZ_WORK/" "$DOQE_JSON_FUZZ_WORK" docs/work/T0008-metadata-json/refs/json-seeds
+  Exit 0. Completed 957,201 inputs in 31 reported seconds from three seeds
+  totaling 300 bytes. Final reported RSS was 525 MiB. No crash, sanitizer
+  diagnostic or pool-accounting abort.
+
+Logs: rebased-mac-*.log in the review-fix log directory above.
+Main CI was not verified.

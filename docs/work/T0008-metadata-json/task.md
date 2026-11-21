@@ -24,12 +24,13 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 ## Done when
 
 - [x] Owner accepts ADR-0005 before implementation.
-- [ ] Failing tests recorded before production code. `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac.
+- [x] Failing tests recorded before production code. `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac.
 - [x] `ctest --preset debug` and `ctest --preset asan-ubsan` pass on dev01.
 - [x] The new libFuzzer preset builds the JSON target. Run the exact command recorded in `docs/DEVELOPMENT.md` with the bounded seed corpus and fixed time, RSS and harness pool limits. Record the result and verify the harness returns all pool charges between inputs.
 - [x] On Mac and dev01, format and lint pass via `cmake --build --preset quality`.
+- [x] On dev01, `bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh` exits 0 with all three Linux allocation-mismatch diagnostics.
 - [ ] CI is green on `main`.
-- [x] On dev01, `cmake --build --preset debug --target module-boundaries` and `ctest --preset debug -R '^Modules\.'` pass.
+- [x] On Mac and dev01, `cmake --build --preset debug --target module-boundaries` and `ctest --preset debug -R '^Modules\.'` pass.
 - [x] `docs/arch/base.md`, `docs/arch/io.md`, `docs/arch/format.md`, `docs/arch/table.md` and `docs/DEVELOPMENT.md` reflect the implementation and check commands.
 
 ## Performance budget
@@ -37,6 +38,13 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 No throughput gate. Enforce the input, nesting and query-memory ceilings in ADR-0005.
 
 ## Notes
+
+- 2026-11-21 re-verified `e453685` after rebasing onto T0010. Mac and dev01
+  each passed 64 Debug and 64 ASan+UBSan tests, format, lint and module
+  checks. Eight Status cases ran in `doqe_status_tests` in each preset on
+  both hosts. The dev01 proof script exited 0 and caught all three Linux
+  allocation mismatches. The Mac JSON fuzz run completed 957,201 inputs.
+  Main CI remains pending.
 
 - 2026-11-21 reproduced the Linux `new-free` proof failure on clean main
   `4f031b0`. CTest ran the seed and returned 0 on both main and T0008,
@@ -85,4 +93,4 @@ No throughput gate. Enforce the input, nesting and query-memory ceilings in ADR-
 
 ## Result
 
-Commit: — · Proof: [Mac review-fix verification with 64 Debug and ASan+UBSan tests and 901,078 fuzz inputs](refs/mac-verification.txt)
+Commit: `e453685ab1eb8620e951ceacc9156677f9e52260` · Proof: [Mac verification](refs/mac-verification.txt) and [dev01 verification](refs/dev01-verification.txt)

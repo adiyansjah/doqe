@@ -52,7 +52,7 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: [T0008](T0008-metadata-json/task.md) — review the Mac implementation and proof; dev01 and main CI are pending
+Next: [T0008](T0008-metadata-json/task.md) — Mac and dev01 re-verified after T0010. Main CI is pending.
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
