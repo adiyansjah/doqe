@@ -69,4 +69,10 @@ Hard rules (ADR-0003)
 - All reader allocations go through the query memory budget (`ResourceExhausted` over budget, `OutOfMemory` on allocator failure).
 - Compression codecs (zlib, zstd, Snappy) need their own ADR before use.
 
+Hard rules (ADR-0004)
+- `base::Status` construction, copy, move and destruction are `noexcept` and never throw; `OutOfMemory` never allocates.
+- Every query-accounted allocation goes through `base::MemoryPool`; never `new`/`malloc` directly for buffers or export state.
+- Pool and buffer lifetimes are reference-counted; the last reference destroys the pool. Never destroy a pool by hand.
+- Column buffers are immutable once published; strings use Arrow `utf8` (int32 offsets).
+
 File names in links must match the exact case.

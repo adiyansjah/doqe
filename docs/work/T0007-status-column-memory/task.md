@@ -1,5 +1,5 @@
 # T0007 Status, query memory budget and minimal columns
-Status: 🟨 doing · Type: feature · Risk: high · Milestone: M03 · Feature: F03.2 · ADRs: [ADR-0002](../../adrs/0002-architecture-modules/adr.md), [ADR-0003](../../adrs/0003-iceberg-parquet-strategy/adr.md)
+Status: 🟨 doing · Type: feature · Risk: high · Milestone: M03 · Feature: F03.2 · ADRs: [ADR-0002](../../adrs/0002-architecture-modules/adr.md), [ADR-0003](../../adrs/0003-iceberg-parquet-strategy/adr.md), [ADR-0004](../../adrs/0004-status-memory-columns/adr.md)
 
 ## Goal
 Add `base::Status` with the ADR-0002 codes, a query memory budget that every reader allocation
@@ -23,7 +23,7 @@ exported through the Arrow C Data interface.
 - Under ASan+UBSan: no leaks, no misaligned buffers (64-byte alignment).
 
 ## Done when
-- [ ] Owner answered the design questions (ADR-0004 accepted if needed)
+- [x] Owner answered the design questions (ADR-0004 accepted if needed)
 - [ ] Failing tests first, then code; `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac and dev01
 - [ ] Format, lint and module-boundary checks pass; CI green on `main`
 - [ ] `docs/arch/base.md`, `docs/arch/column.md` and `docs/DEVELOPMENT.md` updated
@@ -33,6 +33,22 @@ None yet; record allocation counts per batch in tests as a baseline.
 
 ## Notes
 - 2026-11-21 task created. Start in a new thread; ask the owner the design questions first.
+- 2026-11-21 revised proposed [ADR-0004](../../adrs/0004-status-memory-columns/adr.md) after review.
+  The 16-byte error-only `Status` shares immutable detail through an atomic count and copies or
+  moves without allocating. Diagnostic payload is capped at 256 bytes outside the query budget.
+  `OutOfMemory` and failed detail allocation use code-only status.
+- 2026-11-21 the Query, buffer control blocks, and Arrow export states each retain the pool.
+  Allocation stays on the query thread. Consumers can release exports concurrently after Query
+  teardown, with atomic accounting and pool destruction on the last reference. The ADR specifies
+  sized frees, export rollback, moved-child lifetime, and UTF-8 batch rollover at the 32-bit limit.
+  The Scope exclusion for concurrency applies to query execution. Cross-thread release is in scope.
+  C Stream wiring is F03.5 and must preserve export ownership. ADR-0004 awaits owner acceptance
+  before implementation.
+- 2026-11-21 applied the ADR-0004 re-check findings. The proposed contract now specifies
+  final-reference destruction, atomic byte accounting, sized-free checks in every build,
+  UTF-8 truncation, and export rollback. The ADR records the tests to write after owner acceptance.
+
+- 2026-11-21 owner accepted ADR-0004. Next: failing tests first, then base Status, MemoryPool, column buffers, utf8/int64 arrays and Arrow C Data export.
 
 ## Result
 Commit: — · Proof: —
