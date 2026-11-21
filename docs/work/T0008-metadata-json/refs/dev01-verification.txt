@@ -1,0 +1,133 @@
+Date: 2026-11-21 (run started at 17:18:23 +07:00)
+Machine: dev01, x86_64
+OS: Debian 13.7, Linux 6.12.117+deb13-cloud-amd64, glibc 2.41
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117),
+  pinned at /home/dev/opt/llvm-23.1.5, CMake 3.31.6, Ninja 1.12.1
+Build settings: debug and asan-ubsan presets (CMAKE_BUILD_TYPE=Debug on both),
+  C++23, pinned static libc++, libc++abi and libunwind. ASan+UBSan uses
+  static compiler-rt and ASAN_OPTIONS=detect_stack_use_after_return=1 for tests.
+Commit: 42fc6e4ff44a251309f181122f1819bd057fd2a2 (clean detached HEAD)
+
+Transfer and setup
+
+The T0007 evidence pointed to disposable workspaces. This run used a fresh
+checkout at /home/dev/doqe-t0008/checkout. From the Mac:
+
+  git bundle create "$bundle_dir/t0008.bundle" t0008-metadata-json
+  scp "$bundle_dir/t0008.bundle" dev@dev01:doqe-t0008/t0008.bundle
+
+On dev01:
+
+  git clone --branch t0008-metadata-json "$HOME/doqe-t0008/t0008.bundle" "$HOME/doqe-t0008/checkout"
+  git checkout --detach 42fc6e4ff44a251309f181122f1819bd057fd2a2
+  git rev-parse HEAD
+  git status --porcelain
+
+HEAD matched the full hash and git status was empty. Include and library path
+overrides and CMake compiler and linker launcher variables were unset.
+
+Command results
+
+- flock "$HOME/doqe-quiet.lock" cmake --workflow --preset debug
+  Exit 0. Configured, built and passed 64/64 tests (2.71 s CTest).
+- flock "$HOME/doqe-quiet.lock" ctest --preset debug
+  Exit 0. Passed 64/64 tests (2.64 s).
+- flock "$HOME/doqe-quiet.lock" cmake --workflow --preset asan-ubsan
+  Exit 0. Configured, built and passed 64/64 tests (4.69 s CTest).
+- flock "$HOME/doqe-quiet.lock" ctest --preset asan-ubsan
+  Exit 0. Passed 64/64 tests (4.65 s).
+- flock "$HOME/doqe-quiet.lock" cmake --build --preset quality
+  Exit 1. Format passed. Linux clang-tidy failed with two errors in
+  src/io/local_file.cpp (misc-include-cleaner, warnings treated as errors):
+    19:1: included header climits is not used directly
+    114:20: no header providing "PATH_MAX" is directly included
+- bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+  Exit 1. The script acquired the quiet lock itself, passed 64/64 Debug
+  tests in its disposable checkout, and reproduced both lint errors at the
+  quality step. Its later sanitizer and seeded checks were not reached.
+- flock "$HOME/doqe-quiet.lock" cmake --build --preset debug --target module-boundaries
+  Exit 0. Include boundaries passed for all 13 modules.
+- flock "$HOME/doqe-quiet.lock" ctest --preset debug -R '^Modules\.'
+  Exit 0. Modules.IncludeBoundaries and Modules.AdrEdges passed (2/2, 2.69 s).
+
+Logs: /home/dev/doqe-t0008/logs/ on dev01.
+Not verified in this run: Mac, main CI, and the Mac-only JSON fuzzer.
+
+2026-11-21 PATH_MAX include rerun
+
+Tree: detached 42fc6e4ff44a251309f181122f1819bd057fd2a2 plus one
+src/io/local_file.cpp diff. The non-Apple branch now includes <linux/limits.h>
+for PATH_MAX in place of <climits>. Applied from the Mac with:
+
+  git diff HEAD -- src/io/local_file.cpp | ssh dev@dev01 'cd /home/dev/doqe-t0008/checkout && git apply'
+
+Verified the remote HEAD, confirmed that only src/io/local_file.cpp changed,
+and compared the remote and Mac source diffs byte for byte.
+
+- bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+  Exit 1. The script acquired the quiet lock and passed Debug and ASan+UBSan
+  (64/64 each, including both module boundary tests), format, lint and the
+  static sanitizer runtime checks. The missing-static-ASan, format, lint,
+  use-after-free, heap-overflow and signed-overflow seeds produced their
+  expected diagnostics. The new-free seed ran `std::free(new int{42})` but
+  CTest exited 0 (1/1 passed) without the expected ASan allocation-mismatch
+  diagnostic. The script stopped there. The array-delete and sized-delete
+  seeds were not reached. Log: /home/dev/doqe-t0008/logs/path-max-quality-checks.log.
+- flock "$HOME/doqe-quiet.lock" cmake --build --preset quality
+  Exit 0. Format and lint passed, with neither prior include-cleaner error.
+  Log: /home/dev/doqe-t0008/logs/path-max-quality.log.
+
+Main CI was not verified.
+
+2026-11-21 verification after rebasing onto T0010
+
+Date: 2026-11-21T11:08:43Z
+Machine: dev01, x86_64
+OS: Debian 13.7, Linux 6.12.117+deb13-cloud-amd64, glibc 2.41
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117),
+  CMake 3.31.6, Ninja 1.12.1
+Build settings: Debug and ASan+UBSan, C++23, pinned static libc++ and libc++abi.
+  Sanitizer tests use ASAN_OPTIONS=detect_stack_use_after_return=1.
+Commit: e453685ab1eb8620e951ceacc9156677f9e52260 (clean t0008-metadata-json)
+
+Created and verified a complete bundle with
+`git bundle create "$bundle" t0008-metadata-json` and
+`git bundle verify "$bundle"`. Copied it with
+`scp "$bundle" dev@dev01:/home/dev/doqe-t0008-rebased/source.bundle`.
+Via `ssh dev@dev01 'bash -s'`, cloned it into the fresh checkout with
+`git clone --branch t0008-metadata-json source.bundle checkout` from
+`/home/dev/doqe-t0008-rebased`. Confirmed the full HEAD SHA and empty
+porcelain status before verification. All remote work ran as dev.
+
+- bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+  Exit 0. Debug and ASan+UBSan each passed 64/64, including both module
+  boundary tests. Format, lint and static sanitizer runtime checks passed.
+  The script confirmed sanitizer flags on 32 translation units, including
+  both GoogleTest units. The missing-static-ASan, format and lint controls
+  each exited 1 with the expected diagnostic. CTest exited 8 on each of
+  the six runtime seeds and the script matched each diagnostic:
+
+  use-after-free  AddressSanitizer: heap-use-after-free
+  heap-overflow   AddressSanitizer: heap-buffer-overflow
+  signed-overflow runtime error: signed integer overflow
+  new-free        AddressSanitizer: alloc-dealloc-mismatch (operator new vs free)
+  array-delete    AddressSanitizer: alloc-dealloc-mismatch (operator new [] vs operator delete)
+  sized-delete    AddressSanitizer: new-delete-type-mismatch
+- cmake --workflow --preset debug
+- cmake --workflow --preset asan-ubsan
+  Both exited 0 in the bundle checkout under the quiet lock. CTest passed
+  64/64 in each preset.
+- cmake --build --preset debug --target module-boundaries
+  Exit 0. Include boundaries passed for all 13 modules.
+- ctest --preset debug -R '^Modules\.'
+  Exit 0. Modules.IncludeBoundaries and Modules.AdrEdges passed (2/2).
+- ctest --preset debug -V --no-tests=error -R '(^|/)Status(Test|AssignmentTest)\.'
+- ctest --preset asan-ubsan -V --no-tests=error -R '(^|/)Status(Test|AssignmentTest)\.'
+  Both exited 0. All eight Status cases ran from the respective
+  doqe_status_tests executable. The first filter, '^Status\.', matched
+  zero cases and exited 8 before the corrected run.
+
+Logs: rebased-dev01-quality-checks.log, rebased-dev01-module-status.log and
+rebased-dev01-status-suite.log under
+/private/tmp/claude-501/-Users-adiyansjah-Development-Personal-doqe/1698885a-eb32-449f-826f-d4d5247ea0c7/scratchpad/t0008-logs/.
+Main CI was not verified. The JSON fuzz command ran on the Mac.

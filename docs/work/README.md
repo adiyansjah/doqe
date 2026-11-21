@@ -52,7 +52,7 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: T0008 on `t0008-metadata-json`. T0010 must merge first.
+Next: [T0008](T0008-metadata-json/task.md) — PR #2 boundary fixture fix verified on the Mac. Main CI is pending.
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
@@ -63,4 +63,6 @@ Next: T0008 on `t0008-metadata-json`. T0010 must merge first.
 | [T0005](T0005-module-skeleton/task.md) | Module skeleton and boundary checks | M02 | ✅ done |
 | [T0006](T0006-adr-0003-iceberg-strategy/task.md) | ADR-0003: Iceberg and Parquet strategy | M03 | ✅ done |
 | [T0007](T0007-status-column-memory/task.md) | Status, query memory budget and minimal columns | M03 | ✅ done |
+| [T0008](T0008-metadata-json/task.md) | Local reads and Iceberg metadata JSON | M03 | 🟨 doing |
+| [T0009](T0009-manifest-scan-plan/task.md) | Manifest reads and Iceberg scan planning | M03 | ⬜ todo |
 | [T0010](T0010-asan-status-test-isolation/task.md) | Isolate Status allocation probes from ASan tests | M03 | ✅ done |

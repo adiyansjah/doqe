@@ -81,6 +81,7 @@ Run AddressSanitizer and UndefinedBehaviorSanitizer together in their own build 
 
 ```sh
 cmake --workflow --preset asan-ubsan
+ctest --preset asan-ubsan
 ```
 
 Debug and Release link the pinned static C++ runtime and run without ASan. The ASan+UBSan
@@ -159,6 +160,28 @@ bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
 
 `doqe --version` appends `-dirty` when Git reports worktree changes, including untracked files.
 
+## JSON fuzzing
+
+[ADR-0005](adrs/0005-metadata-arena-planning/adr.md) uses the pinned libFuzzer with
+ASan and UBSan. Run from the repository root. The checked-in text seeds stay
+read-only. The temporary writable corpus also holds any crash artifacts.
+
+```sh
+cmake --preset libfuzzer
+cmake --build --preset libfuzzer
+DOQE_JSON_FUZZ_WORK="$(mktemp -d "${TMPDIR:-/tmp}/doqe-json-fuzz.XXXXXX")"
+./build/libfuzzer/doqe_json_fuzz -max_total_time=30 -rss_limit_mb=1024 -max_len=65536 -seed=1 -artifact_prefix="$DOQE_JSON_FUZZ_WORK/" "$DOQE_JSON_FUZZ_WORK" docs/work/T0008-metadata-json/refs/json-seeds
+```
+
+The harness reuses a 32 MiB query pool. Each input gets its own arena, which is
+destroyed before the harness checks that the pool has zero live bytes. The
+fuzzer aborts if the accounting check fails. To lint the opt-in fuzz translation
+unit, use its compilation database.
+
+```sh
+cmake --build --preset libfuzzer --target lint
+```
+
 ## Module layout and checks
 
 [ADR-0002](adrs/0002-architecture-modules/adr.md) assigns one `doqe_<module>` static library
@@ -171,7 +194,8 @@ The [edge table](../cmake/modules.cmake) defines direct module links. Prefix a d
 with `+` when public headers need it. Configure validates the static module types, public
 include roots, declared links, link-related target properties and source ownership. Module
 archives use their default target names. The executable targets are `doqe` and, with
-`BUILD_TESTING`, `doqe_tests` and `doqe_status_tests`.
+`BUILD_TESTING`, `doqe_tests` and `doqe_status_tests`, plus `doqe_json_fuzz` with
+`DOQE_ENABLE_FUZZING`.
 The boundary target checks the final CLI and test link commands against the generated
 paths of declared archives, each executable's compiled objects, and the pinned runtimes.
 Tests link module targets and GoogleTest and compile their own sources under `tests/`.
@@ -183,7 +207,8 @@ use module-public headers. Put shared fixtures in `tests/support/` and include t
 with quoted relative paths such as `"../support/fixture.hpp"`. For compiled support, add a
 test-only static `doqe_test_support` target and link it to `doqe_tests`. Support sources and
 headers use module-public interfaces and declare their module links on the support target.
-Header-only support uses the test executable's declared module links.
+When the support target exists, declare dependencies for all headers in `tests/support/`
+on that target. Otherwise, header-only support uses the test executable's declared module links.
 
 The checker reads every file under the module and test roots as C++, with exceptions for
 `CMakeLists.txt`, `.gitkeep`, `*.in`, and the exact paths of the two [vendored Arrow
@@ -203,13 +228,14 @@ without headers and deliberate build-script tricks such as archive edits perform
 Both CTest and the boundary target build the checked targets before reading Ninja's
 dependencies. The separate `Modules.AdrEdges` CTest compares the CMake edge table with
 ADR-0002. The fixture runner checks the public include chain and seeded violations in a
-disposable copy. Run the runner directly
-on dev01, where it takes the quiet lock itself.
+disposable copy. Use the `--ci` invocation to reproduce the CI step. On dev01, use the
+invocation without `--ci` so the runner takes the quiet lock.
 
 ```sh
 ctest --preset debug -R '^Modules\.'
 cmake --build --preset debug --target module-boundaries
 cmake -P cmake/check-module-edges.cmake
+bash tests/integration/module-boundaries/run.sh --ci
 bash tests/integration/module-boundaries/run.sh
 ```
 
@@ -220,7 +246,7 @@ The tool that covers each check kind in WORKFLOW.md.
 |---|---|---|
 | memory safety / undefined behavior | ASan + UBSan from the pin, `asan-ubsan` workflow | Mac, dev01, both CI platforms |
 | races and leaks | | |
-| fuzz / property tests | libFuzzer from the pin (planned) | |
+| fuzz / property tests | pinned libFuzzer with ASan and UBSan | Mac locally |
 | static checks and formatting | clang-tidy and clang-format from the pin, `quality` build preset | Mac, dev01, both CI platforms |
 | module boundaries | CMake link validation, CTest `Modules.IncludeBoundaries` and `Modules.AdrEdges`, and seeded fixture script | Mac, dev01, both CI platforms |
 | target platforms | Debug workflow on macOS 26 arm64 and Debian 13 x86_64 | Mac, dev01, both CI platforms |

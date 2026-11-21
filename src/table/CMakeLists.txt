@@ -1,1 +1,1 @@
-doqe_add_module(table placeholder.cpp)
+doqe_add_module(table metadata.cpp)

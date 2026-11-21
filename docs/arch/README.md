@@ -59,7 +59,9 @@ The engine will compose SQL, catalog, execution, and maintenance for the server 
 The module map and allowed edges are in [ADR-0002](../adrs/0002-architecture-modules/adr.md#layers-and-direct-dependencies-criteria-1-and-4).
 The build checks declared links, final CLI and test link inputs, and source inclusion.
 Module targets export only their public include roots. Shared test support uses module-public
-interfaces, and GoogleTest headers are limited to test targets.
+interfaces. The boundary checker uses the compiled support target's direct links for the whole
+support directory when that target exists. Otherwise, it uses the test executable's direct links.
+GoogleTest headers are limited to test targets.
 Code review covers symbol-level use without headers and deliberate build-script tricks,
 including custom archive edits and overrides of `CMAKE_CXX_ARCHIVE_CREATE`.
 Distributed execution is deferred beyond M02.

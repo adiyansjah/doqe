@@ -60,23 +60,27 @@ if(BUILD_TESTING)
   FetchContent_MakeAvailable(googletest)
 
   add_executable(doqe_tests tests/cli/version_test.cpp
-    tests/base/memory_pool_test.cpp tests/column/column_test.cpp tests/integration/unwind_test.cpp
+    tests/base/memory_pool_test.cpp tests/base/arena_test.cpp tests/base/fault_pool_test.cpp
+    tests/io/local_file_test.cpp tests/format/json_test.cpp tests/table/metadata_test.cpp
+    tests/column/column_test.cpp tests/integration/unwind_test.cpp
     tests/integration/throw_for_unwind_test.cpp)
   set_source_files_properties(tests/cli/version_test.cpp PROPERTIES
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/cli")
   set_source_files_properties(tests/base/memory_pool_test.cpp PROPERTIES
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/base")
+  set_source_files_properties(tests/io/local_file_test.cpp PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/io")
   set_source_files_properties(tests/column/column_test.cpp PROPERTIES
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/column")
   add_library(doqe_base_test STATIC src/base/memory_pool.cpp)
   target_compile_definitions(doqe_base_test PRIVATE DOQE_TEST_HOOKS)
   target_link_libraries(doqe_base_test PRIVATE doqe_base)
-  target_link_libraries(doqe_tests PRIVATE doqe_cli GTest::gtest_main doqe_base_test doqe_base doqe_column)
+  target_link_libraries(doqe_tests PRIVATE doqe_cli GTest::gtest_main doqe_base_test doqe_base doqe_column doqe_io doqe_format doqe_table)
   add_test(NAME Base.ProductionArchiveHasNoTestHooks COMMAND "${CMAKE_COMMAND}"
     "-DLLVM_NM=${DOQE_LLVM_ROOT}/bin/llvm-nm" "-DARCHIVE=$<TARGET_FILE:doqe_base>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-base-symbols.cmake")
   include(GoogleTest)
-  gtest_discover_tests(doqe_tests)
+  gtest_discover_tests(doqe_tests PROPERTIES TIMEOUT 30)
 
   # Keep the Status allocation probes' replacement operators local to their test binary.
   add_executable(doqe_status_tests tests/base/status_test.cpp)
@@ -92,6 +96,11 @@ if(BUILD_TESTING)
     "-DLLVM_NM=${DOQE_LLVM_ROOT}/bin/llvm-nm"
     "-DDOQE=$<TARGET_FILE:doqe>" "-DDOQE_TESTS=$<TARGET_FILE:doqe_tests>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-runtime-dependencies.cmake")
+endif()
+
+if(DOQE_ENABLE_FUZZING)
+  add_executable(doqe_json_fuzz tests/format/json_fuzz.cpp)
+  target_link_libraries(doqe_json_fuzz PRIVATE doqe_format doqe_base)
 endif()
 
 include(cmake/module-boundaries.cmake)

@@ -1,0 +1,1 @@
+{"format-version":2,"current-schema-id":0,"schemas":[{"type":"struct","schema-id":0,"fields":[{"id":1,"name":"value","type":"long","required":false}]}],"partition-specs":[]}

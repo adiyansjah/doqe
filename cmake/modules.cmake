@@ -3,9 +3,9 @@
 set(doqe_module_edges
   "base"
   "column|+base"
-  "io|base"
-  "format|base|column|io"
-  "table|base|column|io|format"
+  "io|+base"
+  "format|+base|column|io"
+  "table|+base|+column|io|format"
   "catalog|base|io|format|table"
   "exec|base|column|io|format|table"
   "sql|base|column|table|catalog|exec"
@@ -93,7 +93,8 @@ function(doqe_check_executables directory)
   foreach(target IN LISTS targets)
     get_target_property(type "${target}" TYPE)
     if(type STREQUAL "EXECUTABLE" AND NOT target STREQUAL "doqe"
-        AND NOT (BUILD_TESTING AND target MATCHES "^(doqe_tests|doqe_status_tests)$"))
+        AND NOT (BUILD_TESTING AND target MATCHES "^(doqe_tests|doqe_status_tests)$")
+        AND NOT (DOQE_ENABLE_FUZZING AND target STREQUAL "doqe_json_fuzz"))
       message(FATAL_ERROR "Unknown executable target: ${target}")
     endif()
   endforeach()
@@ -135,6 +136,13 @@ function(doqe_check_module_links)
     get_target_property(status_test_links doqe_status_tests LINK_LIBRARIES)
     if(NOT status_test_links STREQUAL "GTest::gtest_main;doqe_base")
       message(FATAL_ERROR "doqe_status_tests must link only GoogleTest and base")
+    endif()
+  endif()
+  if(DOQE_ENABLE_FUZZING)
+    doqe_check_target_inputs(doqe_json_fuzz tests/format)
+    get_target_property(fuzz_links doqe_json_fuzz LINK_LIBRARIES)
+    if(NOT fuzz_links STREQUAL "doqe_format;doqe_base")
+      message(FATAL_ERROR "doqe_json_fuzz must link only format and base")
     endif()
   endif()
   if(TARGET doqe_base_test)
