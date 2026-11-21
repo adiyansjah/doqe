@@ -75,7 +75,7 @@ Format checks Git-tracked and non-ignored new C and C++ sources, headers, and C+
 templates with the pin's clang-format. Lint runs the pin's clang-tidy on project-owned translation units selected from
 the Debug compilation database. It reports header diagnostics under the checkout's source
 path and treats warnings as errors. Build directories and fetched GoogleTest sources are
-excluded.
+excluded. Both checks exclude the exact path of the [vendored Arrow ABI header](arch/column.md#arrow-c-abi-provenance) to keep it verbatim. The module boundary checker still checks its includes.
 
 Run AddressSanitizer and UndefinedBehaviorSanitizer together in their own build directory.
 
@@ -92,15 +92,34 @@ compiler-rt ASan dylib, which also supplies UBSan handlers. The Mac executables 
 export tables. Seeded checks on both hosts cover C++ heap use-after-free, heap-buffer-overflow,
 and signed overflow. On macOS, ASan sees `malloc` and `free` beneath the static C++ allocation
 operators. The pinned shared libc++ trial loaded both the pinned and system C++ runtimes and
-aborted at GoogleTest registration. Allocation-family mismatch detection runs on Linux, where
-compiler-rt's `asan_cxx` supplies `operator new` and `operator delete`. The proof script checks
-`new` with `free`, array `new` with scalar `delete`, and a wrong-sized `delete` on Linux.
+aborted at GoogleTest registration. The Linux quality proof uses compiler-rt's `asan_cxx` to check allocation-family mismatches in its
+standalone fixtures. That proof checks `new` with `free`, array `new` with scalar `delete`, and a
+wrong-sized `delete`. The test binary's global C++ allocation operators use `malloc`,
+`aligned_alloc`, and `free` with ASan instrumentation at those underlying calls.
 [Prototype evidence](work/T0003-quality-checks-ci/refs/asan-prototype.txt)
 
 `Runtime.SharedDependencies` inspects direct Mach-O load commands on macOS and resolved
 dependencies on Linux. It rejects shared C++ runtimes and requires the macOS ASan dylib
 or Linux static `__asan_init` in both executables when sanitizers are enabled.
 The Mac compiler-rt dylib loads system libc++ and libc++abi for its own use.
+
+The pool and column tests cover allocation rollback, move and release of Arrow children, and
+cross-thread release after query ownership ends. Only `doqe_tests` links `doqe_base_test`, which
+builds the flat pool implementation with private fault probes. `Base.ProductionArchiveHasNoTestHooks`
+checks symbols in the production base archive with the pinned `llvm-nm`. The Status tests use the
+test binary's global allocation operators to count calls and inject a heap failure. The column
+tests use a pool wrapper for allocation-step failures. `ArrowExportTest.RollsBackEveryAllocationFailure`
+records the native and export allocation counts for its two-column batch as GoogleTest properties.
+
+To check the sized-free and final-reference pool invariants with assertions disabled, use a
+fresh alternate build directory. On dev01, prefix the build command with the quiet lock.
+
+```sh
+cmake --preset debug -B build/release -DCMAKE_BUILD_TYPE=Release
+cmake --build build/release
+ctest --test-dir build/release --output-on-failure -R '^(MemoryPoolDeathTest[.]|Base[.]ProductionArchiveHasNoTestHooks$)'
+./build/debug/doqe_tests --gtest_filter=ArrowExportTest.RollsBackEveryAllocationFailure --gtest_output=xml:/tmp/doqe-t0007-allocations.xml
+```
 
 To use the same verified LLVM installation at another path, configure a fresh build directory
 and point `DOQE_LLVM_ROOT` at its absolute path.
@@ -167,7 +186,8 @@ headers use module-public interfaces and declare their module links on the suppo
 Header-only support uses the test executable's declared module links.
 
 The checker reads every file under the module and test roots as C++, with exceptions for
-`CMakeLists.txt`, `.gitkeep`, and `*.in`. Keep documentation elsewhere. The generated CLI
+`CMakeLists.txt`, `.gitkeep`, `*.in`, and the exact paths of the two [vendored Arrow
+license files](arch/column.md#arrow-c-abi-provenance). Keep documentation elsewhere. The generated CLI
 version header is the only generated header the checker currently supports. Pinned Clang
 supplies preprocessing tokens and include search paths.
 The checker accepts supported compile flags and quoted headers resolved outside

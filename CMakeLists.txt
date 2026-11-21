@@ -59,11 +59,22 @@ if(BUILD_TESTING)
     GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
   FetchContent_MakeAvailable(googletest)
 
-  add_executable(doqe_tests tests/cli/version_test.cpp tests/integration/unwind_test.cpp
+  add_executable(doqe_tests tests/cli/version_test.cpp tests/base/status_test.cpp
+    tests/base/memory_pool_test.cpp tests/column/column_test.cpp tests/integration/unwind_test.cpp
     tests/integration/throw_for_unwind_test.cpp)
   set_source_files_properties(tests/cli/version_test.cpp PROPERTIES
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/cli")
-  target_link_libraries(doqe_tests PRIVATE doqe_cli GTest::gtest_main)
+  set_source_files_properties(tests/base/memory_pool_test.cpp PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/base")
+  set_source_files_properties(tests/column/column_test.cpp PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src/column")
+  add_library(doqe_base_test STATIC src/base/memory_pool.cpp)
+  target_compile_definitions(doqe_base_test PRIVATE DOQE_TEST_HOOKS)
+  target_link_libraries(doqe_base_test PRIVATE doqe_base)
+  target_link_libraries(doqe_tests PRIVATE doqe_cli GTest::gtest_main doqe_base_test doqe_base doqe_column)
+  add_test(NAME Base.ProductionArchiveHasNoTestHooks COMMAND "${CMAKE_COMMAND}"
+    "-DLLVM_NM=${DOQE_LLVM_ROOT}/bin/llvm-nm" "-DARCHIVE=$<TARGET_FILE:doqe_base>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-base-symbols.cmake")
   include(GoogleTest)
   gtest_discover_tests(doqe_tests)
   add_test(NAME CLI.Version COMMAND "${CMAKE_COMMAND}"

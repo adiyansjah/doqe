@@ -32,7 +32,8 @@ foreach(path IN ITEMS source_root binary_root)
     string(REPLACE "${character}" "\\${character}" ${path} "${${path}}")
   endforeach()
 endforeach()
+# The vendored Arrow ABI header is kept verbatim.
 execute_process(COMMAND "${CLANG_TIDY}" -p "${BINARY_DIR}"
   "--header-filter=^${source_root}/"
-  "--exclude-header-filter=^(${binary_root}|${source_root}/build)/|/(_deps|CMakeFiles)/"
+  "--exclude-header-filter=^(${binary_root}|${source_root}/build)/|/(_deps|CMakeFiles)/|^${source_root}/src/column/include/doqe/column/arrow/c/abi[.]h$"
   ${sources} COMMAND_ERROR_IS_FATAL ANY)

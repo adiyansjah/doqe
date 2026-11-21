@@ -24,9 +24,9 @@ exported through the Arrow C Data interface.
 
 ## Done when
 - [x] Owner answered the design questions (ADR-0004 accepted if needed)
-- [ ] Failing tests first, then code; `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac and dev01
+- [x] Failing tests first, then code; `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac and dev01
 - [ ] Format, lint and module-boundary checks pass; CI green on `main`
-- [ ] `docs/arch/base.md`, `docs/arch/column.md` and `docs/DEVELOPMENT.md` updated
+- [x] `docs/arch/base.md`, `docs/arch/column.md` and `docs/DEVELOPMENT.md` updated
 
 ## Performance budget
 None yet; record allocation counts per batch in tests as a baseline.
@@ -50,5 +50,27 @@ None yet; record allocation counts per batch in tests as a baseline.
 
 - 2026-11-21 owner accepted ADR-0004. Next: failing tests first, then base Status, MemoryPool, column buffers, utf8/int64 arrays and Arrow C Data export.
 
+- 2026-11-21 added the GoogleTest cases before production code. The initial Debug build failed
+  on the three absent module headers. Implemented the pool, columns and C Data export against
+  those tests. Lifecycle tests model Query teardown by dropping the Query's owning pool
+  reference. The reader remains responsible for UTF-8 validation and whole-row retry.
+- 2026-11-21 prepared the implementation for owner review. The checked tree, platform results
+  and raw-log locations are recorded in the proof. TSan has no existing preset.
+
+- 2026-11-21 addressed both implementation reviews. The pool and column owners preserve
+  original allocation pointers. Batch names use a separate charged allocation and strict
+  UTF-8 validation. Only the test binary links the hooked pool copy and replaces the global
+  allocation operators. Added rollback, accounting, lifetime, and boundary regressions.
+  The [verification record](refs/verification.txt) covers both hosts and the seeded mutations.
+
+- 2026-11-21 addressed the pool payload array lifetime review. Batch fields, child records,
+  child links, names, and buffer byte views now use placement array construction. Cleanup
+  uses the original allocation pointers. The [verification record](refs/verification.txt)
+  records the source audit and fresh checks on the Mac and dev01.
+
+- 2026-11-21 addressed the validity bitmap element type review. Native validity reads use
+  the same `uint8_t` view as Arrow consumers. Fresh checks pass on the Mac and dev01
+  ([verification](refs/verification.txt)). Next: owner review, then commit, push and CI.
+
 ## Result
-Commit: — · Proof: —
+Commit: — · Proof: [verification](refs/verification.txt)

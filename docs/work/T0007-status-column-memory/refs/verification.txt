@@ -1,0 +1,322 @@
+Date: 2026-11-21 (UTC), validity bitmap element type review
+Machines: Skyfall.local and dev01 (OS, toolchain and tools as in the next record)
+Commit: 7e6f224b70a2f597a8803f5b390594243c55c1c7
+Branch: t0007-status-column-memory (uncommitted)
+Verified Git tree: 07c7b64edd6a2621bdcfbed08c7c20d26ce7b820
+The Mac worktree, the Mac scratch copy and the dev01 copy with .git produced
+the same tree ID, using the source identity commands below.
+After the checks, only the task Notes changed (4 added lines in task.md):
+  git diff --stat 07c7b64edd6a2621bdcfbed08c7c20d26ce7b820 67466bf626b3a9dfe122334c8ca466c47f8b9bf4
+Final recorded tree: 67466bf626b3a9dfe122334c8ca466c47f8b9bf4 (documentation only).
+
+Change
+Native validity reads (Array::is_valid and the null count in SetValidity) now
+index the same uint8_t elements as Arrow consumers, through Buffer::uint8_view
+over the memcpy result, instead of a std::byte view. New test:
+ArrayTest.NativeAndArrowReadTheSameValidityBitmap. It checks agreement at
+runtime; the element-type fix was checked by source inspection, because the
+earlier byte view read the same address and the test cannot tell them apart.
+The first scratch build after the edit failed to compile (GetBit still called
+with a byte span) and lint reported a missing <cstdint>; both were fixed
+before the results below.
+
+Commands in each scratch source snapshot (root is its parent directory)
+  cmake --workflow --preset debug
+  cmake --workflow --preset asan-ubsan
+  cmake --build --preset quality
+  cmake --preset debug -B "$root/release" -DCMAKE_BUILD_TYPE=Release
+  cmake --build "$root/release"
+  ctest --test-dir "$root/release" --output-on-failure --no-tests=error -R '^(MemoryPoolDeathTest[.]|Base[.]ProductionArchiveHasNoTestHooks$)'
+  bash tests/integration/module-boundaries/run.sh
+On dev01 the build and test commands ran under flock "$HOME/doqe-quiet.lock";
+the fixture script took the lock itself. The first dev01 copy omitted .git,
+so its quality build failed in the format check ("not a git repository").
+Quality was rerun in a second copy that included .git; it exited 0.
+
+Results on both Mac and dev01 (all command exits 0)
+  Debug workflow                   41/41 CTests
+  ASan+UBSan workflow              41/41 CTests
+  Quality build                    format and lint passed
+  Release configure and build      passed
+  Release targeted CTest           4/4
+  Module boundary fixture script   All module boundary fixtures passed
+
+Raw logs outside the working checkout
+  Mac: /private/tmp/claude-501/-Users-adiyansjah-Development-Personal-doqe/30d4b309-bba2-41d2-91db-c86739ae7488/scratchpad/t7/*.log
+  dev01: /home/dev/doqe-t0007-uint8.1795250475/logs/
+
+Not verified: TSan (no existing preset) and CI on main (uncommitted branch).
+
+Earlier verification follows. Its results refer to the trees listed there.
+
+Date: 2026-11-21 (UTC), pool payload array lifetime review
+Machines: Skyfall.local and dev01
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5
+OS: Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
+Tools: Mac CMake 4.4.0 / Ninja 1.13.2, dev01 CMake 3.31.6 / Ninja 1.12.1
+Build settings: C++23, pinned static C++ runtimes, fresh Debug, Debug
+ASan+UBSan, and Release in disposable checkouts outside the working repo.
+Commit: 7e6f224b70a2f597a8803f5b390594243c55c1c7
+Branch: t0007-status-column-memory (uncommitted)
+Verified Git tree: db1995098979f50db6709bb13de145975ac4934d
+
+Source identity
+  export GIT_INDEX_FILE=<scratch directory>/digest.index
+  git read-tree HEAD
+  git add -A -- . ':(exclude)docs/work/T0007-status-column-memory/refs/verification.txt'
+  git write-tree
+The working tree and both extracted source snapshots produced the same tree
+ID. The exclusion keeps the verification file out of its own digest.
+  git diff --check HEAD db1995098979f50db6709bb13de145975ac4934d    exit 0
+
+Pre-fix runtime check (Mac, scratch is /tmp/doqe-t0007-placement.l8Gzfr)
+  cmake --preset debug -B "$scratch/baseline"
+  cmake --build "$scratch/baseline"
+  ctest --test-dir "$scratch/baseline" --output-on-failure -R '^(BatchTest[.]|ArrowExportTest[.]|BufferTest[.])'
+All commands exited 0. The 9 existing tests passed before the fix and cover
+rollback, buffer views, and ownership. Pointer provenance was checked by
+source inspection because these tests do not distinguish same-address pointers.
+
+Source audit
+  rg -n --glob '*.{cpp,hpp}' -- '(\.Allocate\(|->Allocate\(|static_cast<[^>]+\*>\(\*)' src tests/base tests/column
+  rg -n 'static_cast<.*\*>|reinterpret_cast<.*\*>' src/base/memory_pool.cpp src/column/{arrow_export,buffer,column}.cpp
+The audit also found a cast feeding span arithmetic in Buffer::Copy. FlatPool
+now constructs the backing byte array. Its Free cast restores the original
+byte-element pointer to recover the header. Fields and Arrow child records are
+fully constructed before another allocation can fail, so their spans give the
+exact destruction counts on rollback. Child pointer arrays, names, and buffer
+byte views use placement array results. The Arrow buffer pointer table is a
+member array of the constructed export state. Buffer copies use the memcpy
+result for Arrow consumers of implicitly created objects (LWG 4064). The
+remaining pool-payload casts pass raw storage to construct_at for single
+objects and do not perform arithmetic on the cast result.
+  https://cplusplus.github.io/LWG/issue4064
+
+Commands in each scratch source snapshot (root is its parent directory)
+  cmake --workflow --preset debug
+  cmake --build --preset quality
+  cmake --workflow --preset asan-ubsan
+  cmake --preset debug -B "$root/release" -DCMAKE_BUILD_TYPE=Release
+  cmake --build "$root/release"
+  ctest --test-dir "$root/release" --output-on-failure --no-tests=error -R '^(MemoryPoolDeathTest[.]|Base[.]ProductionArchiveHasNoTestHooks$)'
+  bash tests/integration/module-boundaries/run.sh
+On dev01 the two workflows, quality build, Release build and Release CTest
+ran under flock "$HOME/doqe-quiet.lock". The fixture script ran directly and
+took the lock itself.
+
+Additional Mac allocation check
+  "$root/source/build/debug/doqe_tests" --gtest_filter=ArrowExportTest.RollsBackEveryAllocationFailure --gtest_output="xml:$root/logs/allocations.xml"
+Exit 0. The two-field fixture recorded 8 native and 12 export allocations.
+
+Results on both Mac and dev01 (all command exits 0)
+  Debug workflow                   40/40 CTests
+  Quality build                    format and lint passed
+  ASan+UBSan workflow              40/40 CTests
+  Release configure and build      passed
+  Release targeted CTest           4/4, three death tests and production archive symbol check
+  Module boundary fixture script   All module boundary fixtures passed
+
+Raw logs outside the working checkout
+  Mac: /tmp/doqe-t0007-placement.l8Gzfr/mac/logs/
+  Mac pre-fix tests: /tmp/doqe-t0007-placement.l8Gzfr/logs/baseline-*.log
+  dev01: /home/dev/doqe-t0007-placement.aWoide/logs/
+
+Earlier verification follows. Its results refer to the trees listed there.
+
+Date: 2026-11-21 (UTC), implementation review fixes
+Machines: Skyfall.local and dev01
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5
+OS: Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
+Tools: Mac CMake 4.4.0 / Ninja 1.13.2, dev01 CMake 3.31.6 / Ninja 1.12.1
+Build settings: C++23, pinned static C++ runtimes, fresh out-of-source Debug,
+Debug ASan+UBSan and Release. BUILD_TESTING=ON except for the production-only check.
+Commit: 7e6f224b70a2f597a8803f5b390594243c55c1c7
+Branch: t0007-status-column-memory (uncommitted)
+Verified Git tree: 1d97ac9ffb8234aec67c81811ffb2f6826167611
+The tree calculation used the live worktree and both copied checkouts:
+  export GIT_INDEX_FILE=<scratch directory>/digest.index
+  git read-tree HEAD
+  git add -A -- . ':(exclude)docs/work/T0007-status-column-memory/refs/verification.txt'
+  git write-tree
+
+Tests first (Mac)
+  cmake --preset debug -B "$d/red"
+  cmake --build "$d/red"
+  ctest --test-dir "$d/red" --output-on-failure -R 'Base.Production|BatchTest.(RejectsInvalidNames|RollsBackFields)|Utf8SizeCheck|FreeBetweenLoad|LiveBytesAboveLimit'
+The original implementation configured and built successfully. The selected
+CTest run exited 8 with 6/6 failures. The invalid names and name-allocation
+rollback tests accepted inputs they were meant to reject. Array::Utf8 returned
+Unsupported for Int64. The pre-reservation hook did not run, the limit guard
+did not abort, and llvm-nm found hook symbols in the production base archive.
+Adding the direct UTF-8 data-size test made the next build exit 1 with an
+undefined reference to CheckUtf8DataSize before its definition was added.
+The pre-fix runtime tests do not distinguish two pointers at the same address
+by C++ object provenance. The pointer fix was verified by reviewing each
+construction and free path, alongside the runtime ownership and rollback tests.
+
+Final commands on each host (root is the disposable checkout's parent)
+  cmake --preset debug -B "$root/debug"
+  cmake --build "$root/debug"
+  ctest --test-dir "$root/debug" --output-on-failure --no-tests=error
+  cmake --build "$root/debug" --target format lint
+  cmake --preset asan-ubsan -B "$root/asan-ubsan"
+  cmake --build "$root/asan-ubsan"
+  env ASAN_OPTIONS=detect_stack_use_after_return=1 ctest --test-dir "$root/asan-ubsan" --output-on-failure --no-tests=error
+  cmake --preset debug -B "$root/release" -DCMAKE_BUILD_TYPE=Release
+  cmake --build "$root/release"
+  ctest --test-dir "$root/release" --output-on-failure --no-tests=error -R '^(MemoryPoolDeathTest[.]|Base[.]ProductionArchiveHasNoTestHooks$)'
+  bash tests/integration/module-boundaries/run.sh
+  "$root/debug/doqe_tests" --gtest_filter=ArrowExportTest.RollsBackEveryAllocationFailure --gtest_output="xml:$root/logs/allocations.xml"
+  cmake --preset debug -B "$root/production" -DBUILD_TESTING=OFF
+  cmake --build "$root/production" --target doqe_base
+  "$HOME/opt/llvm-23.1.5/bin/llvm-nm" --defined-only --demangle "$root/$config/src/base/libdoqe_base.a"
+  "$HOME/opt/llvm-23.1.5/bin/llvm-nm" --defined-only --demangle "$root/$config/libdoqe_base_test.a"
+The first nm command ran for debug, asan-ubsan, release, and production. The
+second ran for the three test-enabled builds. On dev01 the build commands and
+the two full CTest runs ran under flock "$HOME/doqe-quiet.lock". The module
+boundary fixture runner was invoked directly and takes the lock itself.
+
+Final results (Mac and dev01)
+  Fresh Debug configure / build / CTest             exit 0, 40/40 CTests
+  Format and lint                                   exit 0, both passed
+  Fresh ASan+UBSan configure / build / CTest         exit 0, 40/40 CTests
+  Fresh Release configure / build / targeted CTest  exit 0, 3 death tests plus the symbol check
+  Module boundary fixture runner                    exit 0, all positive and seeded fixtures
+  Batch allocation baseline test                    exit 0, 8 native and 12 export allocations
+  BUILD_TESTING=OFF configure / base build           exit 0
+  llvm-nm                                           exit 0 on all inspected targets
+Debug and ASan+UBSan both include Modules.IncludeBoundaries and Modules.AdrEdges.
+The native batch now charges a separate allocation for the field names.
+The test pool symbols appear in the hooked archive and Release doqe_tests.
+An additional `llvm-nm --defined-only --demangle "$root/release/doqe_tests"`
+inspection confirmed MakeTestPool and InjectLiveBytes in the Release test
+executable on both hosts. All four production base archives per host had
+no test hook or Status probe symbols.
+The initial dev01 transfer carried macOS metadata sidecar files, which caused
+format failures. Those checks were discarded. Both final copies matched the
+worktree digest before recording the results above.
+
+Raw logs outside the checkout
+  Mac: /tmp/doqe-t0007-followup.vjFM3E/mac-final/logs/
+  Mac tests-first: /tmp/doqe-t0007-followup.vjFM3E/red-*.log
+  Mac seeded mutations: /tmp/doqe-t0007-followup.vjFM3E/mutations/logs/
+  dev01: /home/dev/doqe-t0007-verified.pahaNF/logs/
+
+Seeded mutations (Mac Debug, disposable tree, one change at a time)
+  cmake --preset debug -B "$d/mutations/debug"
+  cmake --build "$d/mutations/debug"                        exit 0 for each seed
+  ctest --test-dir "$d/mutations/debug" --output-on-failure --no-tests=error -R '<filter below>'
+  Seed                    CTest filter                                           Exit
+  M1: omit rollback       ArrowExportTest.SingleArrayRollsBackEveryAllocationFailure  8
+  M9: leak former detail  StatusAssignmentTest.OverwrittenDetail                      8
+  OOM new/delete pair     StatusTest.OomExpectedAndFallback                           8
+  Relaxed Buffer decrement BufferTest|ArrowExportTest                                  0
+  Reservation load/store  MemoryPoolTest.FreeBetweenLoadAndReservationDoesNotRestoreStaleBytes 8
+  Overlong E0             StatusTest.MalformedInputEndsAtLastValidBoundary             8
+  Overlong F0             StatusTest.MalformedInputEndsAtLastValidBoundary             8
+  Allow leads F5–F7       StatusTest.MalformedInputEndsAtLastValidBoundary             8
+  Allow excess bitmap     ArrayTest.RejectsWrongValidityBitmapSize                     8
+  Allow invalid used size ArrayTest.Utf8SizeCheckSeparatesSingleValueAndBatchBoundary   8
+  Change UTF-8 extent cap  ArrayTest.ChecksUtf8DataExtentBeforeInspectingOffsets        8
+  Allow NUL in name       BatchTest.RejectsInvalidNamesAndLengthMismatch                8
+  Allow length mismatch   BatchTest.RejectsInvalidNamesAndLengthMismatch                8
+  Omit child nullable     ArrowExportTest.MovedChildrenOutliveMovedParentAndQuery       8
+
+M1 left the data release callback set and 288 live bytes versus a 104-byte
+baseline at allocation 2. M9 left one of two detail allocations unfreed in
+both copy and move cases. The OOM seed added two calls each to new and delete.
+The load/store seed measured 64 instead of 35 live bytes after reservation and
+29 instead of zero after free. The relaxed decrement survived all six selected
+tests. The production decrement remains acquire-release. TSan was not run.
+
+Arrow C ABI provenance
+  For LICENSE.txt, NOTICE.txt and cpp/src/arrow/c/abi.h, compare the vendored
+  bytes to curl -fsSL "https://raw.githubusercontent.com/apache/arrow/apache-arrow-26.0.1/$file"
+  using cmp, then run shasum -a 256 on the local file.
+  LICENSE.txt  cd03925a27219d326d622609fbcae6567279af8b8885c33d5969a9e4ef5d7525
+  NOTICE.txt   afd895d61a00101f6d5a41cf518c83865d815e8109e956f512a0ce4ea9738c06
+  c/abi.h      1828f1ce60368cd590d19595910fa19db09b30728f8a43b5f89933623f7a7276
+All three files matched byte for byte.
+
+Not verified: TSan (no existing preset) and CI on main (uncommitted branch).
+C Data lifecycle tests model Query teardown by dropping the owning PoolPtr.
+
+--- Initial implementation verification (superseded tree) ---
+
+Date: 2026-11-21 (UTC)
+Machines: Skyfall.local, dev01
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5
+OS: Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117)
+Tools: Mac CMake 4.4.0 / Ninja 1.13.2, dev01 CMake 3.31.6 / Ninja 1.12.1
+Build settings: pinned static C++ runtime and C++23. Fresh Debug, Debug ASan+UBSan,
+and Release (targeted death tests).
+Commit: 7e6f224b70a2f597a8803f5b390594243c55c1c7
+Branch: t0007-status-column-memory (uncommitted changes)
+Verified Git tree on both hosts: 418536957e4237274fa6ebc2dbd5287cd867e9a6
+
+Tree calculation in each disposable checkout, with a temporary GIT_INDEX_FILE:
+  git read-tree HEAD
+  git add -A -- . ':(exclude)docs/work/T0007-status-column-memory/refs/verification.txt'
+  git write-tree
+The generated proof itself is excluded from the digest.
+
+Tests first (Mac)
+  cmake --preset debug                  exit 0
+  cmake --build --preset debug          exit 1 before production code
+The three new GoogleTest files were wired before implementation. All three
+failed to compile on their missing doqe/base/status.hpp,
+doqe/base/memory_pool.hpp or doqe/column/column.hpp header. The initial red
+was a compile failure, so no GoogleTest assertions ran at that stage.
+
+After implementation, a disposable Mac copy also tested three seeded regressions:
+  cmake --build --preset debug          exit 0
+  ctest --preset debug -R '(MessageCapKeepsCompleteCodePoints|Utf8SizeCheckSeparatesSingleValueAndBatchBoundary|FreeDuringReservedAllocation/true)'
+                                       exit 8, all 3 selected tests failed
+The failures came from truncating the message by raw byte count, changing the
+exact UTF-8 bound from inclusive to exclusive, and restoring a stale live-byte
+count on allocation failure while another thread frees. The last mutant left
+29 charged bytes and triggered the pool destructor invariant.
+
+Final commands from fresh copied checkouts
+  cmake --workflow --preset debug
+  cmake --workflow --preset asan-ubsan
+  cmake --build --preset quality
+  cmake --preset debug -B build/release -DCMAKE_BUILD_TYPE=Release
+  cmake --build build/release
+  ctest --test-dir build/release --output-on-failure -R '^MemoryPoolDeathTest[.]'
+  ./build/debug/doqe_tests --gtest_filter=ArrowExportTest.RollsBackEveryAllocationFailure --gtest_output=xml:<outside-repo>/allocations.xml
+  bash tests/integration/module-boundaries/run.sh
+On dev01 the workflows and build commands use flock "$HOME/doqe-quiet.lock".
+The boundary fixture script is invoked directly because it takes the lock itself.
+
+Final results (Mac and dev01, all command exits 0)
+  Debug workflow                         30/30 CTests, 23 new
+  ASan+UBSan workflow                    30/30 CTests, including concurrency and alignment
+  Quality target                         format and lint passed
+  Release configure / build              passed
+  Release death tests                    2/2 CTests
+  Allocation baseline test               1/1; 7 native + 12 export allocations
+  Module boundary fixtures               all passed, including seeded rejections
+Both workflow runs include Modules.IncludeBoundaries and Modules.AdrEdges.
+The module boundary fixtures are unchanged. The format and lint exclusions
+apply to the exact vendored ABI header path so the source stays verbatim.
+
+The fresh Mac copy also avoided stale compiler flags in the pre-existing
+working checkout's build/debug cache.
+
+Header provenance
+  cmp src/column/include/doqe/column/arrow/c/abi.h <(curl --fail --silent --show-error --location https://raw.githubusercontent.com/apache/arrow/apache-arrow-26.0.1/cpp/src/arrow/c/abi.h)
+                                       exit 0, byte-for-byte match
+  shasum -a 256 src/column/include/doqe/column/arrow/c/abi.h
+                                       1828f1ce60368cd590d19595910fa19db09b30728f8a43b5f89933623f7a7276
+
+Raw logs outside the checkout
+  Mac: /tmp/doqe-t0007-mac.kmUrN1/verified-logs/
+  Mac tests-first and seeded regressions: /tmp/doqe-t0007-mac.kmUrN1/
+  dev01: /home/dev/doqe-t0007.ENXib9/verified-logs/
+
+Not verified: TSan (no existing preset) and CI on main (uncommitted branch).
+C Data lifecycle tests model Query teardown with the owning PoolPtr.

@@ -2,7 +2,7 @@
 # headers need their public include roots. Unprefixed edges are private.
 set(doqe_module_edges
   "base"
-  "column|base"
+  "column|+base"
   "io|base"
   "format|base|column|io"
   "table|base|column|io|format"
@@ -106,8 +106,11 @@ endfunction()
 function(doqe_check_test_links target)
   get_property(links TARGET "${target}" PROPERTY LINK_LIBRARIES)
   foreach(link IN LISTS links)
-    if(link MATCHES "^GTest::gtest(_main)?$"
-        OR (target STREQUAL "doqe_tests" AND link STREQUAL "doqe_test_support" AND TARGET doqe_test_support))
+    if(link MATCHES "^GTest::gtest(_main)?$")
+      continue()
+    endif()
+    if(target STREQUAL "doqe_tests" AND TARGET "${link}"
+        AND (link STREQUAL "doqe_test_support" OR link STREQUAL "doqe_base_test"))
       continue()
     endif()
     string(REGEX REPLACE "^doqe_" "" module "${link}")
@@ -128,6 +131,19 @@ function(doqe_check_module_links)
   if(BUILD_TESTING)
     doqe_check_target_inputs(doqe_tests tests)
     doqe_check_test_links(doqe_tests)
+  endif()
+  if(TARGET doqe_base_test)
+    doqe_check_target_inputs(doqe_base_test src/base)
+    get_target_property(type doqe_base_test TYPE)
+    get_target_property(source_dir doqe_base_test SOURCE_DIR)
+    get_target_property(sources doqe_base_test SOURCES)
+    get_target_property(links doqe_base_test LINK_LIBRARIES)
+    get_target_property(interface doqe_base_test INTERFACE_LINK_LIBRARIES)
+    if(NOT BUILD_TESTING OR NOT type STREQUAL "STATIC_LIBRARY"
+        OR NOT source_dir STREQUAL PROJECT_SOURCE_DIR OR NOT sources STREQUAL "src/base/memory_pool.cpp"
+        OR NOT links STREQUAL "doqe_base" OR NOT interface STREQUAL "$<LINK_ONLY:doqe_base>")
+      message(FATAL_ERROR "doqe_base_test: requires just the base pool implementation and a private base link")
+    endif()
   endif()
   if(TARGET doqe_test_support)
     get_target_property(type doqe_test_support TYPE)
