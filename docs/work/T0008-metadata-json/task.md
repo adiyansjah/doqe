@@ -1,5 +1,5 @@
 # T0008 Local reads and Iceberg metadata JSON
-Status: ⬜ todo · Type: feature · Risk: high · Milestone: M03 · Feature: F03.3 · ADRs: [ADR-0002](../../adrs/0002-architecture-modules/adr.md), [ADR-0003](../../adrs/0003-iceberg-parquet-strategy/adr.md), [ADR-0004](../../adrs/0004-status-memory-columns/adr.md), [ADR-0005](../../adrs/0005-metadata-arena-planning/adr.md)
+Status: 🟨 doing · Type: feature · Risk: high · Milestone: M03 · Feature: F03.3 · ADRs: [ADR-0002](../../adrs/0002-architecture-modules/adr.md), [ADR-0003](../../adrs/0003-iceberg-parquet-strategy/adr.md), [ADR-0004](../../adrs/0004-status-memory-columns/adr.md), [ADR-0005](../../adrs/0005-metadata-arena-planning/adr.md)
 
 ## Goal
 
@@ -25,9 +25,9 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 
 - [x] Owner accepts ADR-0005 before implementation.
 - [ ] Failing tests recorded before production code. `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac and dev01.
-- [ ] The new libFuzzer preset builds the JSON target. Run the exact command recorded in `docs/DEVELOPMENT.md` with the bounded seed corpus and fixed time, RSS and harness pool limits. Record the result and verify the harness returns all pool charges between inputs.
+- [x] The new libFuzzer preset builds the JSON target. Run the exact command recorded in `docs/DEVELOPMENT.md` with the bounded seed corpus and fixed time, RSS and harness pool limits. Record the result and verify the harness returns all pool charges between inputs.
 - [ ] Format and lint pass via `cmake --build --preset quality`. Module checks pass via `cmake --build --preset debug --target module-boundaries` and `ctest --preset debug -R '^Modules\.'`. CI is green on `main`.
-- [ ] `docs/arch/base.md`, `docs/arch/io.md`, `docs/arch/format.md`, `docs/arch/table.md` and `docs/DEVELOPMENT.md` reflect the implementation and check commands.
+- [x] `docs/arch/base.md`, `docs/arch/io.md`, `docs/arch/format.md`, `docs/arch/table.md` and `docs/DEVELOPMENT.md` reflect the implementation and check commands.
 
 ## Performance budget
 
@@ -42,6 +42,18 @@ No throughput gate. Enforce the input, nesting and query-memory ceilings in ADR-
 - 2026-11-21 design drafted. Next is owner review and acceptance of ADR-0005, then failing tests for T0008.
 - 2026-11-21 owner accepted ADR-0005. Next: failing tests first (fault pool, io local reads, JSON DOM, metadata model), then the fuzz preset and JSON fuzzer.
 
+- 2026-11-21 tests-first Debug build failed on the absent arena and file-system headers.
+  Later regression tests reproduced retained charges after failed whole-file reads
+  and JSON parsing. Arena savepoints now restore charges and preserve earlier values.
+- 2026-11-21 implementation is in the uncommitted branch worktree for review. Mac
+  verification passed for Debug, ASan+UBSan, format, lint, module boundaries and
+  bounded JSON fuzzing. The composite checks for dev01 test passes and
+  green main CI remain open.
+- 2026-11-21 applied all eleven review findings. The tests-first run reproduced
+  four behavior bugs across five failing tests. Debug and ASan+UBSan then passed
+  all 64 tests. Format, lint and both module checks passed, and the bounded JSON fuzz run
+  completed 901,078 inputs. Owner review, dev01 and main CI remain open.
+
 ## Result
 
-Commit: — · Proof: —
+Commit: — · Proof: [Mac review-fix verification with 64 Debug and ASan+UBSan tests and 901,078 fuzz inputs](refs/mac-verification.txt)

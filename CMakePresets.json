@@ -17,12 +17,19 @@
       "inherits": "debug",
       "binaryDir": "${sourceDir}/build/asan-ubsan",
       "cacheVariables": { "DOQE_ENABLE_SANITIZERS": true }
+    },
+    {
+      "name": "libfuzzer",
+      "inherits": "asan-ubsan",
+      "binaryDir": "${sourceDir}/build/libfuzzer",
+      "cacheVariables": { "DOQE_ENABLE_FUZZING": true, "BUILD_TESTING": false }
     }
   ],
   "buildPresets": [
     { "name": "debug", "configurePreset": "debug" },
     { "name": "quality", "configurePreset": "debug", "targets": ["format", "lint"] },
-    { "name": "asan-ubsan", "configurePreset": "asan-ubsan" }
+    { "name": "asan-ubsan", "configurePreset": "asan-ubsan" },
+    { "name": "libfuzzer", "configurePreset": "libfuzzer", "targets": ["doqe_json_fuzz"] }
   ],
   "testPresets": [
     {

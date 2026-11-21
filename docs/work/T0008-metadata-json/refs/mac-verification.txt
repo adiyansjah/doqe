@@ -1,0 +1,123 @@
+Date: 2026-11-21
+Machine: Skyfall, Apple M4 arm64
+OS: macOS 26.6.2 (25G83)
+Toolchain: pinned upstream LLVM Clang 23.1.5, libc++, clang-format, clang-tidy and compiler-rt
+Build settings: Debug and ASan+UBSan presets. libfuzzer adds coverage instrumentation and disables GoogleTest.
+Commit: ba271097c48baf35da4e7fa681f9d92bcabed202 with uncommitted T0008 changes
+
+Tests-first evidence
+
+- cmake --build --preset debug
+  Exit 1. Before the production sources were added, the new tests failed to
+  compile because doqe/base/arena.hpp and doqe/io/file_system.hpp did not exist.
+  Log: red-build.log.
+- ctest --preset debug
+  A later run exited 8 on Modules.IncludeBoundaries because the existing
+  build/debug cache passed -nostdinc++ as a final link argument. The existing
+  build directory was moved intact to debug-original under the log directory.
+  A clean configure with the documented Debug preset resolved the failure.
+- cmake --build --preset debug
+  Exit 0 with the two arena rollback regressions added before the rollback fix.
+  Log: rollback-red-build.log.
+- ctest --preset debug
+  Exit 8 before the rollback fix. LocalFileTest.DetectsGrowthAndShrinkageAfterStat
+  and JsonTest.FailedParseRestoresChargesAndPreservesEarlierValues found retained
+  pool charges. The other 56 tests passed. Log: rollback-red-ctest.log.
+
+Mac command results
+
+- cmake --preset debug: exit 0, clean configure identified Clang 23.1.5.
+- cmake --build --preset debug: exit 0.
+- ctest --preset debug: exit 0, 59/59 passed.
+- cmake --workflow --preset asan-ubsan: exit 0, 59/59 passed.
+- ctest --preset asan-ubsan: exit 0, 59/59 passed.
+- cmake --build --preset debug --target module-boundaries: exit 0, 13 modules passed.
+- ctest --preset debug -R '^Modules\.': exit 0, 2/2 passed.
+- cmake --build --preset quality: exit 0, format and Debug lint passed.
+  Earlier runs exited 1 on new-code lint diagnostics that were fixed.
+- cmake --preset libfuzzer: exit 0.
+- cmake --build --preset libfuzzer: exit 0.
+- cmake --build --preset libfuzzer --target lint: exit 0. An earlier run
+  exited 1 on include, recursion and other lint findings that were fixed.
+
+Bounded JSON fuzz run
+
+DOQE_JSON_FUZZ_WORK="$(mktemp -d "${TMPDIR:-/tmp}/doqe-json-fuzz.XXXXXX")"
+./build/libfuzzer/doqe_json_fuzz -max_total_time=30 -rss_limit_mb=1024 -max_len=65536 -seed=1 -artifact_prefix="$DOQE_JSON_FUZZ_WORK/" "$DOQE_JSON_FUZZ_WORK" docs/work/T0008-metadata-json/refs/json-seeds
+
+Exit 0. 957,971 inputs in 31 reported seconds. Three seeds totaling 300
+bytes. Peak reported RSS was 521 MiB. No crash, sanitizer finding or
+accounting abort. Each input scope destroyed its arena before the harness
+asserted zero live bytes against the shared 32 MiB query pool. The harness
+also checked object lookups and that successful integer conversions have
+no fraction or exponent. Unit tests cover exact integer values.
+A preliminary run before the final harness lint fixes also exited 0
+after 861,098 inputs in 31 reported seconds.
+
+2026-11-21 review-fix rerun on Skyfall
+
+Tests added before the production fixes
+
+- cmake --build --preset debug: exit 0. Log: review-red-build.log.
+- ctest --preset debug: exit 8, 59/64 passed. The failures reproduced
+  ENOTDIR on whole-file and range reads, refs.main with snapshot ID -1,
+  out-of-int64 integer format versions, and bare list/map/struct type names
+  in current and historical schemas. The corrected fixtures, cap checks,
+  nested field IDs and URI precedence passed against the original code.
+  Log: review-red-ctest.log.
+
+Rerun results
+
+- cmake --build --preset debug: exit 0. Log: review-final-debug-build.log.
+- ctest --preset debug: exit 0, 64/64 passed. Log: review-final-debug-ctest.log.
+- cmake --workflow --preset asan-ubsan: exit 0, 64/64 passed.
+  Log: review-final-asan-workflow.log.
+- ctest --preset asan-ubsan: exit 0, 64/64 passed. Log: review-final-asan-ctest.log.
+- cmake --build --preset quality: exit 0, format and lint passed.
+  Early attempts reported formatting and an integer-widening diagnostic in
+  the new tests. Final log: review-quality-verified.log.
+- cmake --build --preset debug --target module-boundaries: exit 0, 13 modules passed.
+  Log: review-final-module-boundaries.log.
+- ctest --preset debug -R '^Modules\.': exit 0, 2/2 passed.
+  Log: review-final-module-ctest.log.
+- cmake --preset libfuzzer: exit 0. Log: review-fuzz-configure.log.
+- cmake --build --preset libfuzzer: exit 0. Log: review-fuzz-build.log.
+- The documented bounded JSON fuzz command above exited 0 after 901,078
+  inputs in 31 reported seconds, with three seeds totaling 300 bytes and a
+  peak reported RSS of 526 MiB. No crash, sanitizer finding or accounting
+  abort. Logs: review-fuzz.log and review-fuzz-work-dir.txt.
+
+Confirmed the CMake source lists and all three generated Ninja build files
+had no target references to the io, format or table placeholders. Removed
+them with `git rm -- src/io/placeholder.cpp src/format/placeholder.cpp src/table/placeholder.cpp`.
+
+Evidence retained outside the repo
+
+The original logs and the archived pre-existing Debug cache are recorded in
+/private/tmp/t0008-logs/. Review-fix logs are in
+/private/tmp/claude-501/-Users-adiyansjah-Development-Personal-doqe/1698885a-eb32-449f-826f-d4d5247ea0c7/scratchpad/t0008-logs/.
+The source corpus is the three text seeds in this refs directory. The Mac
+linker reported duplicate static-archive inputs, which it ignored.
+
+Pending verification
+
+dev01, main CI and standalone race/leak tooling were not verified. Review
+and commit remain pending. No open design questions were encountered.
+
+Changed paths
+
+CMakeLists.txt, CMakePresets.json, cmake/modules.cmake, cmake/sanitizers.cmake
+src/base/CMakeLists.txt, src/base/arena.cpp, src/base/include/doqe/base/arena.hpp
+src/io/CMakeLists.txt, src/io/local_file.cpp, src/io/local_file.hpp
+src/io/include/doqe/io/file_system.hpp
+src/format/CMakeLists.txt, src/format/json.cpp, src/format/include/doqe/format/json.hpp
+src/table/CMakeLists.txt, src/table/metadata.cpp, src/table/include/doqe/table/metadata.hpp
+Deleted: src/io/placeholder.cpp, src/format/placeholder.cpp, src/table/placeholder.cpp
+tests/support/fault_pool.hpp, tests/support/temp_file.hpp
+tests/base/arena_test.cpp, tests/base/fault_pool_test.cpp
+tests/io/local_file_test.cpp, tests/format/json_test.cpp, tests/table/metadata_test.cpp
+tests/format/json_fuzz.cpp
+docs/DEVELOPMENT.md, docs/arch/base.md, docs/arch/io.md, docs/arch/format.md, docs/arch/table.md
+docs/work/README.md, docs/work/T0008-metadata-json/task.md
+docs/work/T0008-metadata-json/refs/mac-verification.txt
+docs/work/T0008-metadata-json/refs/json-seeds/{duplicate,metadata,values}.txt
