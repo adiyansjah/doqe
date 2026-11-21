@@ -121,3 +121,18 @@ docs/DEVELOPMENT.md, docs/arch/base.md, docs/arch/io.md, docs/arch/format.md, do
 docs/work/README.md, docs/work/T0008-metadata-json/task.md
 docs/work/T0008-metadata-json/refs/mac-verification.txt
 docs/work/T0008-metadata-json/refs/json-seeds/{duplicate,metadata,values}.txt
+
+2026-11-21 PATH_MAX include rerun on Skyfall
+
+Tree: 42fc6e4ff44a251309f181122f1819bd057fd2a2 plus the
+src/io/local_file.cpp diff replacing the non-Apple <climits> include with
+<linux/limits.h>. The Mac worktree also contains task and proof edits.
+
+- cmake --build --preset quality: exit 0, format and lint passed.
+  Log: path-max-quality.log.
+- cmake --build --preset debug: exit 0. Log: path-max-debug-build.log.
+- ctest --preset debug: exit 0, 64/64 passed (3.78 s), including
+  Modules.IncludeBoundaries and Modules.AdrEdges. Log: path-max-debug-ctest.log.
+
+Logs are in the review-fix log directory above. ASan+UBSan and fuzzing
+were not rerun for this include change.

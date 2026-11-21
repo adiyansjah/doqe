@@ -24,9 +24,12 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 ## Done when
 
 - [x] Owner accepts ADR-0005 before implementation.
-- [ ] Failing tests recorded before production code. `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac and dev01.
+- [ ] Failing tests recorded before production code. `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac.
+- [x] `ctest --preset debug` and `ctest --preset asan-ubsan` pass on dev01.
 - [x] The new libFuzzer preset builds the JSON target. Run the exact command recorded in `docs/DEVELOPMENT.md` with the bounded seed corpus and fixed time, RSS and harness pool limits. Record the result and verify the harness returns all pool charges between inputs.
-- [ ] Format and lint pass via `cmake --build --preset quality`. Module checks pass via `cmake --build --preset debug --target module-boundaries` and `ctest --preset debug -R '^Modules\.'`. CI is green on `main`.
+- [x] On Mac and dev01, format and lint pass via `cmake --build --preset quality`.
+- [ ] CI is green on `main`.
+- [x] On dev01, `cmake --build --preset debug --target module-boundaries` and `ctest --preset debug -R '^Modules\.'` pass.
 - [x] `docs/arch/base.md`, `docs/arch/io.md`, `docs/arch/format.md`, `docs/arch/table.md` and `docs/DEVELOPMENT.md` reflect the implementation and check commands.
 
 ## Performance budget
@@ -34,6 +37,32 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 No throughput gate. Enforce the input, nesting and query-memory ceilings in ADR-0005.
 
 ## Notes
+
+- 2026-11-21 reproduced the Linux `new-free` proof failure on clean main
+  `4f031b0`. CTest ran the seed and returned 0 on both main and T0008,
+  causing the proof script to exit 1. T0007's `status_test.cpp` supplies
+  strong replacement C++ allocation operators to `doqe_tests`. They
+  route ordinary `operator new` through `malloc`, so ASan sees a matching
+  `malloc` and `free` pair. The proposed fix isolates the Status tests in
+  their own executable and registers it with the module-boundary checks.
+  The T0008 scratch patch passed the full proof script on dev01, including
+  all three Linux allocation diagnostics. Mac scratch Debug and ASan+UBSan
+  each passed 64/64. The dev01 proof logs are in
+  `/home/dev/doqe-main-check/quality-checks.log` and
+  `/home/dev/doqe-t0008-status-isolation-with-boundaries/quality-checks.log`.
+
+- 2026-11-21 verified `42fc6e4` plus the Linux `PATH_MAX` include fix. Mac
+  and dev01 passed format, lint and both module boundary tests. Mac Debug
+  passed 64/64, and dev01 Debug and ASan+UBSan passed 64/64 each. The dev01
+  quality proof script stopped when the `new-free` seed produced no ASan
+  allocation-mismatch diagnostic. Main CI was not verified. See the
+  [Mac proof](refs/mac-verification.txt) and [dev01 proof](refs/dev01-verification.txt).
+
+- 2026-11-21 dev01 verified `42fc6e4`. Debug and ASan+UBSan passed 64/64 each,
+  and both module checks passed. Format passed. The quality preset and proof
+  script failed on Linux include-cleaner diagnostics for `PATH_MAX` in
+  `src/io/local_file.cpp`. Main CI was not verified. See the
+  [dev01 verification](refs/dev01-verification.txt).
 
 - 2026-11-21 Round 2 adds case-insensitive file URI scheme coverage with `FILE:///p`.
 

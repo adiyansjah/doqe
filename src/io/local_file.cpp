@@ -16,8 +16,8 @@
 #include <sys/fcntl.h>
 #include <sys/syslimits.h>
 #else
-#include <climits>
 #include <fcntl.h>
+#include <linux/limits.h>
 #endif
 #include <limits>
 #include <sys/stat.h>
