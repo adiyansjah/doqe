@@ -7,7 +7,7 @@ modules. Format v2, no delete files, types int64 and string with nulls, no parti
 
 ## Features
 - F03.1 Iceberg and Parquet strategy: ADR-0003 (library vs in-house vs mixed), with a measured spike → [T0006](../work/T0006-adr-0003-iceberg-strategy/task.md) ✅
-- F03.2 `base::Status` and the minimal `column` layout for the M03 types, with Arrow C Data export → TBD
+- F03.2 `base::Status` and the minimal `column` layout for the M03 types, with Arrow C Data export → [T0007](../work/T0007-status-column-memory/task.md)
 - F03.3 Table metadata and scan planning: `metadata.json`, manifest list, manifests (`table`, local-path `catalog`) → TBD
 - F03.4 Data file reading for the M03 types in `format`, batches produced by `exec` → TBD
 - F03.5 `doqe scan <path>` in `cli`, checked against expected output → TBD
