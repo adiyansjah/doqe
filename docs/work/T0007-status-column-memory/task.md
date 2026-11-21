@@ -1,5 +1,5 @@
 # T0007 Status, query memory budget and minimal columns
-Status: 🟨 doing · Type: feature · Risk: high · Milestone: M03 · Feature: F03.2 · ADRs: [ADR-0002](../../adrs/0002-architecture-modules/adr.md), [ADR-0003](../../adrs/0003-iceberg-parquet-strategy/adr.md), [ADR-0004](../../adrs/0004-status-memory-columns/adr.md)
+Status: ✅ done · Type: feature · Risk: high · Milestone: M03 · Feature: F03.2 · ADRs: [ADR-0002](../../adrs/0002-architecture-modules/adr.md), [ADR-0003](../../adrs/0003-iceberg-parquet-strategy/adr.md), [ADR-0004](../../adrs/0004-status-memory-columns/adr.md)
 
 ## Goal
 Add `base::Status` with the ADR-0002 codes, a query memory budget that every reader allocation
@@ -25,7 +25,7 @@ exported through the Arrow C Data interface.
 ## Done when
 - [x] Owner answered the design questions (ADR-0004 accepted if needed)
 - [x] Failing tests first, then code; `ctest --preset debug` and `ctest --preset asan-ubsan` pass on the Mac and dev01
-- [ ] Format, lint and module-boundary checks pass; CI green on `main`
+- [x] Format, lint and module-boundary checks pass; CI green on `main`
 - [x] `docs/arch/base.md`, `docs/arch/column.md` and `docs/DEVELOPMENT.md` updated
 
 ## Performance budget
@@ -71,6 +71,8 @@ None yet; record allocation counts per batch in tests as a baseline.
 - 2026-11-21 addressed the validity bitmap element type review. Native validity reads use
   the same `uint8_t` view as Arrow consumers. Fresh checks pass on the Mac and dev01
   ([verification](refs/verification.txt)). Next: owner review, then commit, push and CI.
+- 2026-11-21 owner approved. Branch CI run 44886565035 and `main` CI run 44887575552 passed on
+  macOS 26 arm64, Debian 13 x86_64 and the CMake 3.25 floor. Task closed.
 
 ## Result
-Commit: — · Proof: [verification](refs/verification.txt)
+Commit: be62ac7 · Proof: [verification](refs/verification.txt) — Debug and ASan+UBSan 41/41 on the Mac and dev01; format, lint, boundaries and Release death tests pass; CI run 44887575552 green on `main`. Not verified: TSan (no preset).

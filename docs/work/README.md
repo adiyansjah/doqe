@@ -52,7 +52,7 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: T0007
+Next: none — create the F03.3 task (table metadata and scan planning) with the owner
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
@@ -62,4 +62,4 @@ Next: T0007
 | [T0004](T0004-adr-0002-architecture/task.md) | ADR-0002: architecture, modules and components | M02 | ✅ done |
 | [T0005](T0005-module-skeleton/task.md) | Module skeleton and boundary checks | M02 | ✅ done |
 | [T0006](T0006-adr-0003-iceberg-strategy/task.md) | ADR-0003: Iceberg and Parquet strategy | M03 | ✅ done |
-| [T0007](T0007-status-column-memory/task.md) | Status, query memory budget and minimal columns | M03 | 🟨 doing |
+| [T0007](T0007-status-column-memory/task.md) | Status, query memory budget and minimal columns | M03 | ✅ done |
