@@ -35,9 +35,10 @@ What this milestone delivers, in one or two lines.
 ````
 
 ## Milestones
-Current: none
+Current: M03
 
 | #   | Milestone | Status | Exit criteria (short) |
 |-----|-----------|--------|-----------------------|
 | M01 | [Walking skeleton](M01-walking-skeleton.md) | ✅ done | builds, tests and checks pass on Mac + dev01 and in CI |
 | M02 | [Architecture baseline](M02-architecture-baseline.md) | ✅ done | ADR-0002 accepted; modules build and boundaries are enforced in CI |
+| M03 | [First Iceberg read](M03-first-iceberg-read.md) | 🟨 doing | `doqe scan` reads a small local Iceberg table correctly, in CI |

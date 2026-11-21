@@ -52,7 +52,7 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: none
+Next: T0006
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
@@ -61,3 +61,4 @@ Next: none
 | [T0003](T0003-quality-checks-ci/task.md) | Quality checks and CI | M01 | ✅ done |
 | [T0004](T0004-adr-0002-architecture/task.md) | ADR-0002: architecture, modules and components | M02 | ✅ done |
 | [T0005](T0005-module-skeleton/task.md) | Module skeleton and boundary checks | M02 | ✅ done |
+| [T0006](T0006-adr-0003-iceberg-strategy/task.md) | ADR-0003: Iceberg and Parquet strategy | M03 | 🟨 doing |
