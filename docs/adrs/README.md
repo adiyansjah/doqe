@@ -70,6 +70,7 @@ Newest first.
 
 | #    | Date | Title | Status |
 |------|------|-------|--------|
+| [0005](0005-metadata-arena-planning/adr.md) | 2026-11-21 | Use a pool-charged arena and injected file reads for scan planning | accepted |
 | [0004](0004-status-memory-columns/adr.md) | 2026-11-21 | Use compact status, a flat query pool and shared Arrow buffers | accepted |
 | [0003](0003-iceberg-parquet-strategy/adr.md) | 2026-11-21 | Use in-house readers for the first Iceberg scans | accepted |
 | [0002](0002-architecture-modules/adr.md) | 2026-11-21 | Use layered modules with one static library each | accepted |
