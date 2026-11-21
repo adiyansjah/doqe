@@ -92,24 +92,24 @@ compiler-rt ASan dylib, which also supplies UBSan handlers. The Mac executables 
 export tables. Seeded checks on both hosts cover C++ heap use-after-free, heap-buffer-overflow,
 and signed overflow. On macOS, ASan sees `malloc` and `free` beneath the static C++ allocation
 operators. The pinned shared libc++ trial loaded both the pinned and system C++ runtimes and
-aborted at GoogleTest registration. The Linux quality proof uses compiler-rt's `asan_cxx` to check allocation-family mismatches in its
-standalone fixtures. That proof checks `new` with `free`, array `new` with scalar `delete`, and a
-wrong-sized `delete`. The test binary's global C++ allocation operators use `malloc`,
-`aligned_alloc`, and `free` with ASan instrumentation at those underlying calls.
+aborted at GoogleTest registration. The Linux quality proof uses compiler-rt's `asan_cxx`
+allocation operators in `doqe_tests` to diagnose `new` with `free`, array `new` with scalar
+`delete`, and a wrong-sized `delete`.
 [Prototype evidence](work/T0003-quality-checks-ci/refs/asan-prototype.txt)
 
 `Runtime.SharedDependencies` inspects direct Mach-O load commands on macOS and resolved
 dependencies on Linux. It rejects shared C++ runtimes and requires the macOS ASan dylib
-or Linux static `__asan_init` in both executables when sanitizers are enabled.
+or Linux static `__asan_init` in `doqe` and `doqe_tests` when sanitizers are enabled.
 The Mac compiler-rt dylib loads system libc++ and libc++abi for its own use.
 
 The pool and column tests cover allocation rollback, move and release of Arrow children, and
 cross-thread release after query ownership ends. Only `doqe_tests` links `doqe_base_test`, which
 builds the flat pool implementation with private fault probes. `Base.ProductionArchiveHasNoTestHooks`
-checks symbols in the production base archive with the pinned `llvm-nm`. The Status tests use the
-test binary's global allocation operators to count calls and inject a heap failure. The column
-tests use a pool wrapper for allocation-step failures. `ArrowExportTest.RollsBackEveryAllocationFailure`
-records the native and export allocation counts for its two-column batch as GoogleTest properties.
+checks symbols in the production base archive with the pinned `llvm-nm`. CTest discovers the
+Status tests in `doqe_status_tests`, where replacement allocation operators count calls and
+inject heap failures. The column tests use a pool wrapper for allocation-step failures.
+`ArrowExportTest.RollsBackEveryAllocationFailure` records the native and export allocation
+counts for its two-column batch as GoogleTest properties.
 
 To check the sized-free and final-reference pool invariants with assertions disabled, use a
 fresh alternate build directory. On dev01, prefix the build command with the quiet lock.
@@ -171,7 +171,7 @@ The [edge table](../cmake/modules.cmake) defines direct module links. Prefix a d
 with `+` when public headers need it. Configure validates the static module types, public
 include roots, declared links, link-related target properties and source ownership. Module
 archives use their default target names. The executable targets are `doqe` and, with
-`BUILD_TESTING`, `doqe_tests`.
+`BUILD_TESTING`, `doqe_tests` and `doqe_status_tests`.
 The boundary target checks the final CLI and test link commands against the generated
 paths of declared archives, each executable's compiled objects, and the pinned runtimes.
 Tests link module targets and GoogleTest and compile their own sources under `tests/`.

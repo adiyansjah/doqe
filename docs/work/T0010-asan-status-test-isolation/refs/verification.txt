@@ -1,0 +1,71 @@
+Date: 2026-11-21 UTC
+Machines: Skyfall.local (Mac) and dev01
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, SDK 26.5. Debian 13.7, Linux 6.12.117+deb13-cloud-amd64 x86_64, glibc 2.41.
+Toolchain: upstream LLVM 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117), including clang-format and clang-tidy. Mac CMake 4.4.0 and Ninja 1.13.2. dev01 CMake 3.31.6 and Ninja 1.12.1.
+Build settings: Debug and ASan+UBSan presets, C++23, pinned static libc++ and libc++abi. Linux uses static compiler-rt and libunwind. Mac uses the pinned ASan dylib. Sanitized tests use ASAN_OPTIONS=detect_stack_use_after_return=1.
+Commit: a8bb8a4f9dfec367fc1a8fe1926dfe40e07f4ff4 (clean bundle checkouts). Only documentation changed when recording verification in the final T0010 commit.
+
+Before the fix (dev01, clean main 4f031b0ad650b461dc02ed56cf080793eae8aad0)
+  bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+  Exit 1. The retained log /home/dev/doqe-main-check/quality-checks.log
+  shows Debug and ASan+UBSan passing 41/41 each. CTest returned 0 for
+  Seed.Violation (new-free) and emitted no allocation-mismatch diagnostic.
+  The proof script stopped at this seed, before array-delete and sized-delete.
+
+Mac (fresh local clone of the T0010 bundle)
+  cmake --preset debug
+  cmake --build --preset debug
+  ctest --preset debug
+  cmake --workflow --preset asan-ubsan
+  cmake --build --preset quality
+  cmake --build --preset debug --target module-boundaries
+  ctest --preset debug -R '^Modules\.'
+  ctest --preset debug -V -R 'Status(Test|AssignmentTest)\.'
+  ctest --preset asan-ubsan -V -R 'Status(Test|AssignmentTest)\.'
+
+  All commands exited 0. Debug and ASan+UBSan passed 41/41 each.
+  Format and lint passed. The boundary target passed for 13 modules, and
+  the module CTest selection passed 2/2. Both Status selections passed 8/8.
+  All eight verbose test commands in each preset used doqe_status_tests.
+  Build output included a GoogleTest character-conversion warning and a
+  duplicate-library notice on the doqe_tests link.
+  Logs: /tmp/doqe-t0010.poQjHH/mac-*.log
+
+Transfer (Mac to dev01 user space)
+  git bundle create /tmp/doqe-t0010.poQjHH/t0010.bundle t0010-asan-status-test-isolation
+  scp /tmp/doqe-t0010.poQjHH/t0010.bundle dev@dev01:/home/dev/doqe-t0010.bundle
+  ssh dev@dev01
+  git clone --quiet -b t0010-asan-status-test-isolation /home/dev/doqe-t0010.bundle /home/dev/doqe-t0010
+
+dev01 (fresh /home/dev/doqe-t0010 clone)
+  bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh
+
+  Exit 0. The script acquired the quiet lock. Debug and ASan+UBSan passed
+  41/41 each. Format, lint and the Linux runtime dependency check passed.
+  The format, lint, missing-static-ASan, use-after-free, heap-overflow
+  and signed-overflow negative checks emitted their expected diagnostics.
+  The following CTest seeds each exited 8 and matched the required diagnostic.
+    new-free: AddressSanitizer: alloc-dealloc-mismatch (operator new vs free)
+    array-delete: AddressSanitizer: alloc-dealloc-mismatch (operator new [] vs operator delete)
+    sized-delete: AddressSanitizer: new-delete-type-mismatch
+  Log: /home/dev/doqe-t0010-quality-checks.log
+
+  flock "$HOME/doqe-quiet.lock" cmake --workflow --preset debug
+  flock "$HOME/doqe-quiet.lock" cmake --workflow --preset asan-ubsan
+  flock "$HOME/doqe-quiet.lock" cmake --build --preset debug --target module-boundaries
+  ctest --preset debug -V -R 'Status(Test|AssignmentTest)\.'
+  ctest --preset asan-ubsan -V -R 'Status(Test|AssignmentTest)\.'
+
+  All commands exited 0. Both workflows passed 41/41, including both module
+  CTest checks. The boundary target passed for 13 modules. Both Status
+  selections passed 8/8. All eight verbose test commands in each preset
+  used doqe_status_tests.
+  Logs: /home/dev/doqe-t0010-{debug,asan-ubsan,boundaries,status-debug,status-asan}.log
+
+  for exe in doqe_tests doqe_status_tests; do
+    "$HOME/opt/llvm-23.1.5/bin/llvm-nm" --defined-only "build/asan-ubsan/$exe" | grep ' _Znwm$'
+  done
+
+  Exit 0. doqe_tests had weak W _Znwm. doqe_status_tests had strong T _Znwm.
+
+Not verified: CI on main for T0010.

@@ -52,7 +52,7 @@ Commit: — · Proof: — (one-line summary; files in `refs/`)
 ````
 
 ## Board
-Next: none — create the F03.3 task (table metadata and scan planning) with the owner
+Next: T0008 on `t0008-metadata-json`. T0010 must merge first.
 
 | Task | Title | Milestone | Status |
 |------|-------|-----------|--------|
@@ -63,3 +63,4 @@ Next: none — create the F03.3 task (table metadata and scan planning) with the
 | [T0005](T0005-module-skeleton/task.md) | Module skeleton and boundary checks | M02 | ✅ done |
 | [T0006](T0006-adr-0003-iceberg-strategy/task.md) | ADR-0003: Iceberg and Parquet strategy | M03 | ✅ done |
 | [T0007](T0007-status-column-memory/task.md) | Status, query memory budget and minimal columns | M03 | ✅ done |
+| [T0010](T0010-asan-status-test-isolation/task.md) | Isolate Status allocation probes from ASan tests | M03 | ✅ done |

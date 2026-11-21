@@ -59,7 +59,7 @@ if(BUILD_TESTING)
     GIT_TAG 52eb8108c5bdec04579160ae17225d66034bd723)
   FetchContent_MakeAvailable(googletest)
 
-  add_executable(doqe_tests tests/cli/version_test.cpp tests/base/status_test.cpp
+  add_executable(doqe_tests tests/cli/version_test.cpp
     tests/base/memory_pool_test.cpp tests/column/column_test.cpp tests/integration/unwind_test.cpp
     tests/integration/throw_for_unwind_test.cpp)
   set_source_files_properties(tests/cli/version_test.cpp PROPERTIES
@@ -77,6 +77,11 @@ if(BUILD_TESTING)
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-base-symbols.cmake")
   include(GoogleTest)
   gtest_discover_tests(doqe_tests)
+
+  # Keep the Status allocation probes' replacement operators local to their test binary.
+  add_executable(doqe_status_tests tests/base/status_test.cpp)
+  target_link_libraries(doqe_status_tests PRIVATE GTest::gtest_main doqe_base)
+  gtest_discover_tests(doqe_status_tests)
   add_test(NAME CLI.Version COMMAND "${CMAKE_COMMAND}"
     "-DDOQE=$<TARGET_FILE:doqe>" -DARGUMENT=--version -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check-cli.cmake")
   add_test(NAME CLI.UnknownArgument COMMAND "${CMAKE_COMMAND}"
