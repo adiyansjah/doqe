@@ -172,3 +172,38 @@ Commit: e453685ab1eb8620e951ceacc9156677f9e52260 (clean t0008-metadata-json)
 
 Logs: rebased-mac-*.log in the review-fix log directory above.
 Main CI was not verified.
+
+2026-11-21 PR #2 module boundary fixture follow-up
+
+Date: 2026-11-21
+Machine: Skyfall.local, arm64
+OS: macOS 26.6.2 (25G83), SDK 26.5
+Toolchain: upstream LLVM Clang 23.1.5 (392dfff97d29b59d77e5cac6d4b6ef2585fe7117),
+  CMake 4.4.0, Ninja 1.13.2
+Build settings: Debug and ASan+UBSan with the pinned toolchain
+Commit: eaeabdcc6e3e0ba0502dec6ecb1213f6db945b7c plus the fixture dependency fix
+
+The earlier proof did not record the fixture runner. DEVELOPMENT.md listed
+the lock-taking invocation and now also lists the CI invocation with --ci.
+The Debian PR job and the clean Mac baseline both reported
+"tests/support/fault_pool.hpp: support has no direct dependency on base".
+In the regular build, the header uses the existing base link on doqe_tests.
+The fixture creates doqe_test_support and the checker uses that target's
+direct links for the copied support directory.
+
+- bash tests/integration/module-boundaries/run.sh --ci
+  Exit 1 on a clean Mac clone at eaeabdc, immediately after the header-only
+  case passed. Log: module-fixtures-baseline-clean.log.
+  Exit 0 after the fix. All positive fixtures passed and all 54 seeded
+  negative cases emitted their expected diagnostics. Log: module-fixtures-after.log.
+- ctest --preset debug
+  Exit 0, 64/64 passed. Log: module-fixture-fix-debug-ctest.log.
+- cmake --build --preset quality
+  Exit 0, format and lint passed. Log: module-fixture-fix-quality.log.
+- cmake --build --preset debug --target module-boundaries
+  Exit 0, all 13 modules passed. Log: module-fixture-fix-boundaries.log.
+- cmake --workflow --preset asan-ubsan
+  Exit 0, 64/64 passed. Log: module-fixture-fix-asan.log.
+
+Logs are in the review-fix log directory above. Debian CI for the fix was
+not verified locally.

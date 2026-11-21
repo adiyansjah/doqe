@@ -478,9 +478,10 @@ run support-header-build "${build[@]}"
 run support-header "${ctest_modules[@]}"
 echo 'Header-only shared test support: passed'
 
+# The compiled target owns the copied support headers too. fault_pool.hpp uses base.
 sed '/^  include(GoogleTest)/i\
   add_library(doqe_test_support STATIC tests/support/fixture.cpp)\
-  target_link_libraries(doqe_test_support PUBLIC doqe_engine)\
+  target_link_libraries(doqe_test_support PUBLIC doqe_engine doqe_base)\
   target_link_libraries(doqe_tests PRIVATE doqe_test_support)
 ' "$scratch/root.cmake" > CMakeLists.txt
 printf '#pragma once\n#include "doqe/engine/boundary_fixture.hpp"\ninline constexpr bool boundary_support = doqe::engine::boundary_fixture;\n' > tests/support/fixture.hpp

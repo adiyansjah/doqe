@@ -207,7 +207,8 @@ use module-public headers. Put shared fixtures in `tests/support/` and include t
 with quoted relative paths such as `"../support/fixture.hpp"`. For compiled support, add a
 test-only static `doqe_test_support` target and link it to `doqe_tests`. Support sources and
 headers use module-public interfaces and declare their module links on the support target.
-Header-only support uses the test executable's declared module links.
+When the support target exists, declare dependencies for all headers in `tests/support/`
+on that target. Otherwise, header-only support uses the test executable's declared module links.
 
 The checker reads every file under the module and test roots as C++, with exceptions for
 `CMakeLists.txt`, `.gitkeep`, `*.in`, and the exact paths of the two [vendored Arrow
@@ -227,13 +228,14 @@ without headers and deliberate build-script tricks such as archive edits perform
 Both CTest and the boundary target build the checked targets before reading Ninja's
 dependencies. The separate `Modules.AdrEdges` CTest compares the CMake edge table with
 ADR-0002. The fixture runner checks the public include chain and seeded violations in a
-disposable copy. Run the runner directly
-on dev01, where it takes the quiet lock itself.
+disposable copy. Use the `--ci` invocation to reproduce the CI step. On dev01, use the
+invocation without `--ci` so the runner takes the quiet lock.
 
 ```sh
 ctest --preset debug -R '^Modules\.'
 cmake --build --preset debug --target module-boundaries
 cmake -P cmake/check-module-edges.cmake
+bash tests/integration/module-boundaries/run.sh --ci
 bash tests/integration/module-boundaries/run.sh
 ```
 

@@ -31,6 +31,7 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 - [x] On dev01, `bash docs/work/T0003-quality-checks-ci/refs/quality-checks.sh` exits 0 with all three Linux allocation-mismatch diagnostics.
 - [ ] CI is green on `main`.
 - [x] On Mac and dev01, `cmake --build --preset debug --target module-boundaries` and `ctest --preset debug -R '^Modules\.'` pass.
+- [x] On the Mac, `bash tests/integration/module-boundaries/run.sh --ci` passes, including the expected diagnostics from seeded violations.
 - [x] `docs/arch/base.md`, `docs/arch/io.md`, `docs/arch/format.md`, `docs/arch/table.md` and `docs/DEVELOPMENT.md` reflect the implementation and check commands.
 
 ## Performance budget
@@ -38,6 +39,12 @@ Read a local Iceberg v2 metadata file into a pool-backed model with the current 
 No throughput gate. Enforce the input, nesting and query-memory ceilings in ADR-0005.
 
 ## Notes
+
+- 2026-11-21 fixed the PR #2 Debian module-boundary fixture by declaring the copied
+  fault-pool header's `base` dependency on the seeded compiled support target.
+  On the Mac, the fixture suite, Debug, ASan+UBSan, quality and the standalone
+  boundary target passed. The CI fixture invocation is now in `DEVELOPMENT.md`
+  and the [Mac proof](refs/mac-verification.txt). Main CI remains pending.
 
 - 2026-11-21 re-verified `e453685` after rebasing onto T0010. Mac and dev01
   each passed 64 Debug and 64 ASan+UBSan tests, format, lint and module
